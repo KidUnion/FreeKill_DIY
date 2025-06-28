@@ -21,6 +21,7 @@
 
 &emsp;&emsp; 异包的设计理念是对标包、风林火山等早期扩展包武将的技能进行异构，即在尽可能保留原版武将特色（技能名称、词条、效果、玩法等）的基础上重新设计技能，以提高原版经典武将的契合度和可玩性。异包武将的实现代码可见 [yi.lua](yi.lua#L108-L113)。
 <br>
+<br>
 
 ### 武将列表
 <table>
@@ -29,42 +30,47 @@
   </tr>
   <tr>
     <td bgcolor = red>蜀</td>
-    <td> <a href="#guanyu" style="color: var(--fgColor-default)">关羽</a> </td>
-    <td> <a href="#wangping" style="color: var(--fgColor-default)">王平</a></td>
+    <td>关羽</td>
+    <td>王平</td>
   </tr>
   <tr>
     <td bgcolor = green>吴</td>
-    <td><a href="#luxun" style="color: var(--fgColor-default)">陆逊</a></td>
+    <td>陆逊</td>
   </tr>
   <tr>
     <td bgcolor = gray>群</td>
   </tr>
 </table>
 <br>
+<br>
 
 ### 技能明细
-**<font face = "黑体" size = 4 color =#08ee23 id = "luxun"> 陆逊 3/3 男 吴势力 儒生雄才</font>**
+**<font face = "黑体" size = 4 color =#08ee23> 陆逊 3/3 男 吴势力 儒生雄才</font>**
 > 设计师：KidUnion；实装进度：[code](yi.lua#L10)
 
 **【谦逊】** 每回合限一次，当你成为锦囊牌的目标时，你可弃置与之颜色相同的所有手牌并取消你为目标。
 
 **【连营】** 当你使用一种花色的最后一张手牌时，你可令此牌不计次数或额外结算一次；当你非因使用失去一种花色的最后一张手牌时，你可观看牌堆顶一张牌并将之交给一名角色。
 <br>
+<br>
 
-**<font face = "黑体" size = 4 color = red id = "guanyu"> 关羽 4/4 男 蜀势力 美髯公</font>**
+**<font face = "黑体" size = 4 color = red> 关羽 4/4 男 蜀势力 美髯公</font>**
 > 设计师：KidUnion；实装进度：[code](yi.lua#L108)
 
 **【武圣】** 出牌阶段各限一次，你可将手牌弃至/摸至X张，视为使用一张无距离次数限制的【杀】/【决斗】。（X为你本回合使用牌的花色数且包含无色）
 
 **【义绝】** *锁定技*，防止一名角色对你造成的首次致命伤害，若如此做，防止你对其造成的下一次致命伤害。
 <br>
+<br>
 
-**<font face = "黑体" size = 4 color = red id = "wangping"> 王平 4/4 男 蜀势力 兵谋以致用</font>**
+**<font face = "黑体" size = 4 color = red> 王平 4/4 男 蜀势力 兵谋以致用</font>**
 > 设计师：KidUnion；实装进度：[code](yi.lua#L243)
 
 **【飞军】** 每回合每种花色限一次，准备阶段结束时，你可弃置任意张花色相同的牌并视为使用一张无距离限制的【杀】/将手牌摸至体力上限，然后此技能的发动时机提前/延后至多等量个阶段。
 
 **【兵略】** 你的回合结束时，你可执行本回合的第X个阶段。（X为本回合进入弃牌堆的花色数）
+<br>
+<br>
 <br>
 <br>
 
@@ -73,6 +79,7 @@
 &emsp;&emsp; 2022年，玄蝶主导设计的门阀士族系列武将横空出世，以其高度历史契合的技能机制与复杂的自联动体系重塑了叙事性设计的范式，也因其操作门槛与平衡性对于游戏环境的破坏性影响而引发了广泛争议……
 
 &emsp;&emsp; 历史长河中，数十年的三国乱世见证了众多士家大族的兴衰浮沉，刻下了空盒别君、挟术难保、切议天变等传世典故；某杀批群内，数平米的社团牌桌见证了诸位群友的欢声啸语与精彩瞬间，留下了酒杀卫境、智负严颜、纵势吃桃等经典冥场面。
+<br>
 <br>
 
 ### 技能明细
@@ -84,6 +91,7 @@
 **【蹈劫】** *锁定技*，你每回合使用的第一张实体牌无效，然后你失去一点体力或一个非锁定技并获得之。
 
 **【破防】** *宗群技*，*锁定技*，当你使用的牌被无效或你造成的伤害被防止时，你烧条5秒并令一名群友获得【无言】直至回合结束。
+<br>
 <br>
 
 **<font face = "黑体" size = 4 >群神鹿 4/4 男 群势力</font>**
@@ -99,6 +107,8 @@
 **【新生】** *锁定技*，当你死亡后，牌堆顶的5张牌及所有其他角色的手牌对你可见。
 <br>
 <br>
+<br>
+<br>
 
 ## 素质杀
 ### 介绍
@@ -108,40 +118,43 @@
 
 &emsp;&emsp; 《素质杀》中的武将选材自高中令我印象深刻的同学或老师，技能设计则参考了他们的性格特点和经典言行。素质杀的实现代码可见 [suzhi.lua](suzhi.lua)。
 <br>
+<br>
 
 ### 武将列表
 <table>
   <tr>
     <td bgcolor = blue>师</td>
-    <td> <a href="#chenbaohai" style="color: var(--fgColor-default)">陈宝海</a> </td>
-    <td> <a href="#yujiajiang" style="color: var(--fgColor-default)">喻家江</a> </td>
+    <td> <陈宝海</td>
+    <td> <喻家江</td>
   </tr>
   <tr>
     <td bgcolor = red>数</td>
-    <td> <a href="#xuzhicheng" style="color: var(--fgColor-default)">徐志诚</a> </td>
-    <td> <a href="#weijiayan" style="color: var(--fgColor-default)">魏家炎</a></td>
+    <td>徐志诚</td>
+    <td>魏家炎</td>
   </tr>
   <tr>
     <td bgcolor = green>物</td>
   </tr>
   <tr>
     <td bgcolor = gray>群</td>
-    <td> <a href="#zhouyunjie" style="color: var(--fgColor-default)">周云杰</a> </td>
-    <td> <a href="#quanzezhi" style="color: var(--fgColor-default)">全泽之</a> </td>
+    <td>周云杰</td>
+    <td>全泽之</td>
   </tr>
 </table>
 <br>
+<br>
 
 ### 技能明细
-**<font face = "黑体" size = 4 color =  red id = "xuzhicheng"> 徐志诚 4/4 男 数势力 危言危行</font>**
+**<font face = "黑体" size = 4 color =  red> 徐志诚 4/4 男 数势力 危言危行</font>**
 > 设计师：KidUnion；实装进度：[code](suzhi.lua#L10)
 
 **【熵增】** 出牌阶段限一次，你可展示手牌并亮出牌堆顶五张牌，然后获得其中花色与你的手牌均不同的牌；你本回合使用的下一张牌无距离次数限制且不计花色。
 
 **【乱卷】** *锁定技*，你的手牌上限等于你本回合未使用过的花色数+1。
 <br>
+<br>
 
-**<font face = "黑体" size = 4 color = #2222ff id = "yujiajiang"> 喻家江 4/4 男 师势力 老大</font>**
+**<font face = "黑体" size = 4 color = #2222ff> 喻家江 4/4 男 师势力 老大</font>**
 > 设计师：KidUnion；实装进度：[code](suzhi.lua#L147)
 
 **【热讽】** 出牌阶段限一次，你可以弃置一张牌（点数记为X）并指定一名其他角色，其弃置任意张牌并移除以下效果中的等量项直至回合结束。本回合你对其使用点数不大于X的牌无距离限制且执行剩余所有选项：
@@ -149,28 +162,32 @@
 
 **【迷烟】** 当你成为【杀】的目标时，你可交给你攻击范围内的角色一张牌，然后获得此【杀】或令其交给你一张牌。
 <br>
+<br>
 
-**<font face = "黑体" size = 4 color = #2222ff id = "chenbaohai"> 陈宝海 4/4 男 师势力 海宝</font>**
+**<font face = "黑体" size = 4 color = #2222ff> 陈宝海 4/4 男 师势力 海宝</font>**
 > 设计师：KidUnion；实装进度：[code](suzhi.lua#L300)
 
 **【题海】** *锁定技*，当你于回合内使用牌时，若此牌花色未被记录，你记录之；否则你从牌堆中获得一张花色未被记录的牌。结束阶段，你亮出牌堆顶等同于记录花色数的牌并可使用其中任意张牌名字数各不相同的牌，然后移除所有记录；若你此阶段未造成过伤害，下次亮出的牌数加一。
 <br>
+<br>
 
-**<font face = "黑体" size = 4 id = "zhouyunjie"> 周云杰 4/4 男 群势力 黑神</font>**
+**<font face = "黑体" size = 4> 周云杰 4/4 男 群势力 黑神</font>**
 > 设计师：KidUnion；实装进度：[code](suzhi.lua#L407)
 
 **【饶舌】** 每回合各限一次，你的阶段结束时，若你的手牌数等于X且不为零，你可将手牌摸至五张并选择一项（X为你本回合剩余的阶段数）：1、视为使用一张【火攻】并于结算完毕后弃置以此法获得的牌；2、弃置X张牌。
 <br>
+<br>
 
-**<font face = "黑体" size = 4 id = "quanzezhi"> 全泽之 4/4 男 群势力 僧</font>**
+**<font face = "黑体" size = 4> 全泽之 4/4 男 群势力 僧</font>**
 > 设计师：KidUnion；实装进度：[code](suzhi.lua#L472)
 
 **【望岳】** 出牌阶段限一次，你可与一名手牌数不大于你的角色交换手牌，然后摸两张牌并将手牌弃至与其相同，本回合你与其距离视为一。
 
 **【醉拳】** 出牌阶段，你可视为使用一张【酒】并随机重铸一张手牌。当有【闪】进入弃牌堆时，你本回合使用的下一张【杀】或【酒】无次数限制。
 <br>
+<br>
 
-**<font face = "黑体" size = 4 color = red id = "weijiayan"> 魏家炎 4/4 男 数势力 无眠的卷王</font>**
+**<font face = "黑体" size = 4 color = red> 魏家炎 4/4 男 数势力 无眠的卷王</font>**
 > 设计师：KidUnion；实装进度：[code](suzhi.lua#L589)
 
 **【律己】** 出牌阶段，牌堆顶的4张牌对你可见（你响应牌后此数值-1直至你下回合结束）；出牌阶段开始时，你可弃置一张牌，本回合你可使用其中花色与之相同的牌。
