@@ -586,6 +586,7 @@ Fk:loadTranslationTable{
   ["~quanzezhi"] = "我……我输了……",
 }
 
+-- 魏家炎
 local weijiayan = General(extension, "weijiayan", "shu", 4)
 local lvji = fk.CreateViewAsSkill{
   name = "lvji",
@@ -759,7 +760,8 @@ Fk:loadTranslationTable{
   ["#weijiayan"] = "无眠的卷王",
   ["designer:weijiayan"] = "KidUnion",
   ["lvji"] = "律己",
-  [":lvji"] = "出牌阶段开始时，你可弃置一张牌，本回合牌堆顶的{4}张牌对你可见且你可使用其中花色与之相同的牌；你响应牌后{}中的值-1直至你下回合结束。",
+  [":lvji"] = "出牌阶段，牌堆顶的4张牌对你可见（你响应牌后此数值-1直至你下回合结束）；"..
+  "出牌阶段开始时，你可弃置一张牌，本回合你可使用其中花色与之相同的牌。",
   ["#lvji"] = "律己：观看牌堆顶%arg张牌，使用其中你需要的牌",
   ["#lvji-discard"] = "律己：弃一张牌，本回合你可使用牌堆顶此花色的牌",
   ["#lvji_trigger"] = "律己",
