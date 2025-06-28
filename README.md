@@ -74,7 +74,7 @@
 <br>
 
 **<font face = "黑体" size = 4 color = red> 赵云 4/4 男 蜀势力 虎将龙胆</font>**
-> 设计师：KidUnion；实装进度：[code](yi.lua#L243)
+> 设计师：KidUnion；实装进度：[code](yi.lua#L243)/[card](image/offline/yi__zhaoyun.jpg)
 
 **【龙胆】** 转换技，当你需要使用基本牌时，
 阴：你可弃一张牌并视为使用之；
