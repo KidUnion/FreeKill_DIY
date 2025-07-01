@@ -786,6 +786,103 @@ Fk:loadTranslationTable{
 
   ["~weijiayan"] = "我……我输了……",
 }
+
+
+-- 陆彬
+local lubing = General(extension, "lubing", "wu", 3)
+local lvdong = fk.CreateTriggerSkill{
+  name = "lvdong",
+  anim_type = "drawcard",
+  frequency = Skill.Compulsory,
+  events = {fk.CardUsing},
+  can_trigger = function(self, event, target, player, data)
+    return player:hasSkill(self) and (data.extra_data or {}).can_lvdong
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    target:drawCards(1, self.name)
+      local card = room:askForCardChosen(player, target, "he", self.name, "#lvdong-discard::"..target.id)
+      room:throwCard({card}, self.name, target, player)
+  end,
+
+  refresh_events = {fk.CardUsing, fk.TurnStart},
+  can_refresh = function(self, event, target, player, data)
+    return player.phase ~= Player.NotActive and player:hasSkill(self, true)
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local room = player.room
+    if event == fk.TurnStart then
+      local color = ""
+      room.logic:getEventsOfScope(GameEvent.UseCard, 999, function(e)
+        local use = e.data[1]
+        color = use.card:getColorString()
+        return true
+      end, Player.HistoryGame)
+      if color ~= "" then
+        room:setPlayerMark(player, "@lvdong-turn", color)
+      else
+        room:setPlayerMark(player, "@lvdong-turn", 0)
+      end
+    elseif event == fk.CardUsing then
+      local mark = player:getMark("@lvdong-turn")
+      if mark ~= 0 and mark ~= data.card:getColorString() then
+        data.extra_data = data.extra_data or {}
+        data.extra_data.can_lvdong = true
+      end
+      room:setPlayerMark(player, "@lvdong-turn", data.card:getColorString())
+    end  
+  end,
+}
+local renlun = fk.CreateTriggerSkill{
+  name = "renlun",
+  anim_type = "masochism",
+  events = {fk.Damaged},
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(self) and player:isWounded()
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    for i = 1, player:getLostHp(), 1 do
+      local judge = {
+        who = player,
+        reason = self.name,
+        pattern = ".",
+      }
+      room:judge(judge)
+      if player.dead or not judge.card then return end
+      if not data.from.dead and judge.card.color == Card.Black then
+        local card = room:askForCard(player, 1, 1, false, self.name, true, ".|.|spade,club", "#renlun_black::"..data.from.id)
+        if #card > 0 then
+          room:useVirtualCard("slash", card, player, data.from, self.name)
+        end
+      end
+      if judge.card.color == Card.Red then
+        local card = room:askForCard(player, 1, 1, false, self.name, true, ".|.|heart,diamond", "#renlun_red")
+        if #card > 0 then
+          room:useVirtualCard("ex_nihilo", card, player, player, self.name, true)
+        end
+      end
+    end
+  end,
+}
+lubing:addSkill(lvdong)
+lubing:addSkill(renlun)
+Fk:loadTranslationTable{
+  ["lubing"] = "陆彬",
+  ["#lubing"] = "节奏大师",
+  ["designer:weijiayan"] = "KidUnion",
+  ["lvdong"] = "律动",
+  [":lvdong"] = "锁定技，你的回合内，当有角色使用与上一张被使用的牌颜色不同的牌时，其摸一张牌，然后你弃置其一张牌。",
+  ["#lvdong-discard"] = "律动：你须弃置%dest一张牌",
+  ["renlun"] = "人论",
+  [":renlun"] = "当你受到伤害后，你可进行X次判定（X为你已损失的体力值），若为红/黑，你可将一张手牌当【无中生有】/【杀】对你/伤害来源使用。",
+  ["#renlun_black"] = "人论：你可将一张黑牌当【杀】对%dest使用",
+  ["#renlun_red"] = "人论：你可将一张红牌当【无中生有】使用",
+  
+  ["@lvdong-turn"] = "律动",
+
+  ["~weijiayan"] = "我……我输了……",
+}
 return extension
 
 -- local lvmeng = General(extension, "suzhi__lvmeng", "wu", 4)

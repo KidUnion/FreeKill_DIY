@@ -366,7 +366,7 @@ local binglue = fk.CreateTriggerSkill{
     local room = player.room
     if player ~= player.room.current then return end
     local mark = {}
-    room.logic:getEventsOfScope(GameEvent.MoveCards, 1, function(e)
+    room.logic:getEventsOfScope(GameEvent.MoveCards, 999, function(e)
       for _, move in ipairs(e.data) do
         if move.toArea == Card.DiscardPile then
           for _, info in ipairs(move.moveInfo) do
