@@ -840,6 +840,12 @@ local renlun = fk.CreateTriggerSkill{
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self) and player:isWounded()
   end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    if room:askForSkillInvoke(player, self.name, nil, "#renlun-invoke:::"..(player:getLostHp())) then
+      return true
+    end
+  end,
   on_use = function(self, event, target, player, data)
     local room = player.room
     for i = 1, player:getLostHp(), 1 do
@@ -851,13 +857,13 @@ local renlun = fk.CreateTriggerSkill{
       room:judge(judge)
       if player.dead or not judge.card then return end
       if not data.from.dead and judge.card.color == Card.Black then
-        local card = room:askForCard(player, 1, 1, false, self.name, true, ".|.|spade,club", "#renlun_black::"..data.from.id)
+        local card = room:askForCard(player, 1, 1, false, self.name, true, ".", "#renlun_black::"..data.from.id)
         if #card > 0 then
           room:useVirtualCard("slash", card, player, data.from, self.name)
         end
       end
       if judge.card.color == Card.Red then
-        local card = room:askForCard(player, 1, 1, false, self.name, true, ".|.|heart,diamond", "#renlun_red")
+        local card = room:askForCard(player, 1, 1, false, self.name, true, ".", "#renlun_red")
         if #card > 0 then
           room:useVirtualCard("ex_nihilo", card, player, player, self.name, true)
         end
@@ -876,8 +882,9 @@ Fk:loadTranslationTable{
   ["#lvdong-discard"] = "律动：你须弃置%dest一张牌",
   ["renlun"] = "人论",
   [":renlun"] = "当你受到伤害后，你可进行X次判定（X为你已损失的体力值），若为红/黑，你可将一张手牌当【无中生有】/【杀】对你/伤害来源使用。",
-  ["#renlun_black"] = "人论：你可将一张黑牌当【杀】对%dest使用",
-  ["#renlun_red"] = "人论：你可将一张红牌当【无中生有】使用",
+  ["#renlun-invoke"] = "人论：你可进行%arg次判定",
+  ["#renlun_black"] = "人论：你可将一张手牌当【杀】对%dest使用",
+  ["#renlun_red"] = "人论：你可将一张手牌当【无中生有】使用",
   
   ["@lvdong-turn"] = "律动",
 

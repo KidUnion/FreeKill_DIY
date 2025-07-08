@@ -9,7 +9,7 @@ Fk:loadTranslationTable{
 
 -- 陆逊
 local luxun = General(extension, "yi__luxun", "wu", 3)
-local yi__qianxun = fk.CreateTriggerSkill{
+local qianxun = fk.CreateTriggerSkill{
   name = "yi__qianxun",
   anim_type = "defensive",
   events = {fk.TargetConfirming},
@@ -35,7 +35,7 @@ local yi__qianxun = fk.CreateTriggerSkill{
     end
   end,
 }
-local yi__lianying = fk.CreateTriggerSkill{
+local lianying = fk.CreateTriggerSkill{
   name = "yi__lianying",
   anim_type = "special",
   prompt = "#yi__lianying-other",
@@ -59,7 +59,7 @@ local yi__lianying = fk.CreateTriggerSkill{
     room:askForYiji(player, card, room:getAlivePlayers(), self.name, 1, 1, "#yi__lianying-give", card)
   end,
 }
-local yi__lianyin_use = fk.CreateTriggerSkill{
+local lianyin_use = fk.CreateTriggerSkill{
   name = "#yi__lianyin_use",
   anim_type = "offensive",
   events = {fk.TargetSpecified},
@@ -78,9 +78,9 @@ local yi__lianyin_use = fk.CreateTriggerSkill{
     end
   end,
 }
-yi__lianying:addRelatedSkill(yi__lianyin_use)
-luxun:addSkill(yi__qianxun)
-luxun:addSkill(yi__lianying)
+lianying:addRelatedSkill(lianyin_use)
+luxun:addSkill(qianxun)
+luxun:addSkill(lianying)
 Fk:loadTranslationTable{
   ["yi__luxun"] = "异陆逊",
   ["#yi__luxun"] = "儒生雄才",
@@ -107,7 +107,7 @@ Fk:loadTranslationTable{
 
 -- 关羽
 local guanyu = General(extension, "yi__guanyu", "shu", 4)
-local yi__wusheng = fk.CreateActiveSkill{
+local wusheng = fk.CreateActiveSkill{
   name = "yi__wusheng",
   anim_type = "offensive",
   card_num = function(self)
@@ -148,7 +148,7 @@ local yi__wusheng = fk.CreateActiveSkill{
     end
   end,
 }
-local yi__wusheng_trigger = fk.CreateTriggerSkill{
+local wusheng_trigger = fk.CreateTriggerSkill{
   name = "#yi__wusheng_trigger",
   mute = true,
   events = {},
@@ -178,7 +178,7 @@ local yi__wusheng_trigger = fk.CreateTriggerSkill{
     player.room:setPlayerMark(player, "@yi__wusheng-turn", 0)
   end,
 }
-local yi__yijue = fk.CreateTriggerSkill{
+local yijue = fk.CreateTriggerSkill{
   name = "yi__yijue",
   anim_type = "defensive",
   frequency = Skill.Compulsory,
@@ -194,7 +194,7 @@ local yi__yijue = fk.CreateTriggerSkill{
     return true
   end,
 }
-local yi__yijue_delay = fk.CreateTriggerSkill{
+local yijue_delay = fk.CreateTriggerSkill{
   name = "#yi__yijue_delay",
   anim_type = "defensive",
   frequency = Skill.Compulsory,
@@ -211,10 +211,10 @@ local yi__yijue_delay = fk.CreateTriggerSkill{
     return true
   end,
 }
-yi__wusheng:addRelatedSkill(yi__wusheng_trigger)
-yi__yijue:addRelatedSkill(yi__yijue_delay)
-guanyu:addSkill(yi__wusheng)
-guanyu:addSkill(yi__yijue)
+wusheng:addRelatedSkill(wusheng_trigger)
+yijue:addRelatedSkill(yijue_delay)
+guanyu:addSkill(wusheng)
+guanyu:addSkill(yijue)
 Fk:loadTranslationTable{
   ["yi__guanyu"] = "异关羽",
   ["#yi__guanyu"] = "美髯公",
@@ -480,6 +480,94 @@ Fk:loadTranslationTable{
   ["$yi__longdan2"] = "银枪映豪胆，赤血鉴忠心！",
 
   ["~yi__zhaoyun"] = "生驱单骑摧敌锐，死作忠魂佑主周！",
+}
+
+-- 袁术
+local yuanshu = General(extension, "yi__yuanshu", "qun", 3)
+local wangzun = fk.CreateTriggerSkill{
+  name = "yi__wangzun",
+  anim_type = "special",
+  events = {fk.TurnStart},
+  can_trigger = function(self, event, target, player, data)
+    return target.seat == 1 and player:hasSkill(self) and #target:getCardIds("he") > 0
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    if room:askForSkillInvoke(player, self.name, nil, "#yi__wangzun-invoke::"..target.id) then
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local card1 = room:askForCardChosen(player, target, "he", self.name)
+    if not card1 then return false end
+    room:obtainCard(player, card1, false, fk.ReasonPrey, player.id, self.name)
+    local card2 = room:askForCard(player, 1, 1, true, self.name, true, ".", "#yi__wangzun-give::"..target.id)
+    if #card2 == 0 then return false end
+    room:obtainCard(target, card2, false, fk.ReasonPrey, player.id, self.name)
+    player:gainAnExtraPhase(Player.Play)
+  end,
+}
+local tongji = fk.CreateViewAsSkill{
+  name = "yi__tongji",
+  prompt = "#yi__tongji",
+  anim_type = "offensive",
+  interaction = function(self)
+    local all_names = U.getAllCardNames("bt")
+    local names = table.filter(all_names, function (name)
+      local card = Fk:cloneCard(name)
+      card.skillName = self.name
+      return Self:canUse(card) and not Self:prohibitUse(card) and card.is_damage_card and not table.contains(
+      Self:getTableMark("yi__tongji_used"), name)
+    end)
+    if #names == 0 then return end
+    return UI.ComboBox {choices = names}
+  end,
+  card_num = 0,
+  view_as = function(self)
+    if not self.interaction.data then return end
+    local card = Fk:cloneCard(self.interaction.data)
+    card.skillName = self.name
+    return card
+  end,
+  enabled_at_play = function(self, player)
+    return player:usedSkillTimes(self.name, Player.HistoryPhase) < 1
+  end,
+  after_use = function(self, player, use)
+    if not use.card then return end
+    player.room:addTableMark(player, "yi__tongji_used", use.card.name)
+  end,
+}
+local tongji_trigger = fk.CreateTriggerSkill{
+  name = "#yi__tongji_trigger",
+  refresh_events = {fk.PreCardEffect},
+  can_refresh = function(self, event, target, player, data)
+    return player:hasSkill("yi__tongji") and table.contains(player:getTableMark("yi__tongji_used"), data.card.name)
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local room = player.room
+    room:notifySkillInvoked(player, "yi__tongji", "negative")
+    data.disresponsiveList = data.disresponsiveList or {}
+    table.insertIfNeed(data.disresponsiveList, player.id)
+  end,
+}
+wangzun:addRelatedSkill(tongji_trigger)
+yuanshu:addSkill(wangzun)
+yuanshu:addSkill(tongji)
+Fk:loadTranslationTable{
+  ["yi__yuanshu"] = "异袁术",
+  ["#yi__yuanshu"] = "冢中枯骨",
+  ["designer:yi__yuanshu"] = "KidUnion",
+  ["yi__wangzun"] = "妄尊",
+  [":yi__wangzun"] = "一号位的回合开始前，你可获得其一张牌，然后你可交给其一张牌并执行一个出牌阶段。",
+  ["#yi__wangzun-invoke"] = "发动【妄尊】，获得%dest一张牌",
+  ["#yi__wangzun-give"] = "妄尊：你可交给%dest一张牌并执行一个出牌阶段",
+  ["yi__tongji"] = "同疾",
+  [":yi__tongji"] = "出牌阶段限一次，你可视为使用一张未以此法使用过的伤害牌，然后本局游戏你不能响应此牌名的牌。",
+  ["#yi__tongji"] = "发动【同疾】，视为使用一张未以此法使用过的伤害牌",
+  ["#yi__tongji_trigger"] = "同疾",
+
+  ["~yi__yuanshu"] = "蜜水……蜜水……",
 }
 
 return extension
