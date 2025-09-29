@@ -570,6 +570,107 @@ Fk:loadTranslationTable{
   ["~yi__yuanshu"] = "蜜水……蜜水……",
 }
 
+-- 黄盖
+local huanggai = General(extension, "yi__huanggai", "wu", 4)
+local zhaxiang = fk.CreateTriggerSkill{
+  name = "yi__zhaxiang",
+  anim_type = "drawcard",
+  prompt = "#yi__zhaxiang",
+  events = {fk.HpLost},
+  on_trigger = function(self, event, target, player, data)
+    for i = 1, data.num do
+      if i > 1 and not player:hasSkill(self) then break end
+      self:doCost(event, target, player, data)
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local cards = player:drawCards(3, self.name)
+    local visible = {}
+    for _, id in ipairs(cards) do
+      local card = Fk:getCardById(id)
+      if(not card.is_damage_card) then
+        room:setCardMark(card, "@@visible", 1)
+        table.insert(visible, id)
+      else 
+        room:setCardMark(card, "@@yi__zhaxiang_damage", 1)
+      end
+    end
+    player:showCards(visible)
+  end,
+}
+local zhaxiang_delay = fk.CreateTriggerSkill{
+  name = "#yi__zhaxiang_delay",
+  refresh_events = {fk.PreCardUse},
+  can_refresh = function(self, event, target, player, data)
+    return player == target and data.card:getMark("@@yi__zhaxiang_damage") > 0
+  end,
+  on_refresh = function(self, event, target, player, data)
+    data.disresponsiveList = table.map(player.room.alive_players, Util.IdMapper)
+  end,
+}
+local zhaxiang_trigger = fk.CreateTriggerSkill{
+  name = "#yi__zhaxiang_trigger",
+  mute = true,
+  events = {fk.AfterCardsMove},
+  can_trigger = function(self, event, target, player, data)
+    if player.dead or not player:hasSkill("yi__zhaxiang") then return false end
+    local suits = player:getTableMark("@yi__zhaxiang-round")
+    if #suits == 4 then return false end
+    local suit, can_use = nil, false
+    for _, move in ipairs(data) do
+      if move.from == player.id then
+        for _, info in ipairs(move.moveInfo) do
+          local card = Fk:getCardById(info.cardId)
+          suit = card:getSuitString(true)
+          if card:getMark("@@visible") > 0 or info.fromArea == Card.PlayerEquip then
+            card:setMark("@@visible", 0)
+            if not table.contains(suits, suit) and suit ~= Card.NoSuit then
+              player.room:addTableMark(player, "@yi__zhaxiang-round", suit)
+              can_use = true
+            end
+          end
+        end
+      end
+      return can_use
+    end
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    U.askForUseVirtualCard(room, player, "fire__slash", nil, self.name, "#yi__zhaxiang_slash", 
+    true, true, true)
+  end,
+}
+zhaxiang:addRelatedSkill(zhaxiang_trigger)
+zhaxiang:addRelatedSkill(zhaxiang_delay)
+huanggai:addSkill("ex__kurou")
+huanggai:addSkill(zhaxiang)
+Fk:loadTranslationTable{
+  ["yi__huanggai"] = "异黄盖",
+  ["#yi__huanggai"] = "轻身焚舰",
+  ["designer:yi__yuanshu"] = "KidUnion",
+  ["ex__kurou"] = "苦肉",
+  [":ex__kurou"] = "出牌阶段限一次，你可以弃置一张牌并失去1点体力。",
+  ["yi__zhaxiang"] = "诈降",
+  [":yi__zhaxiang"] = "当你失去体力后，你可摸三张牌并明置其中的非伤害牌，其余牌不可被响应；"..
+  "你每轮首次失去一种花色的明置牌后可视为使用一张无距离限制的火【杀】。",
+  ["@@visible"] = "明置",
+  ["@@yi__zhaxiang_damage"] = "不可被响应",
+  ["@yi__zhaxiang-round"] = "诈降",
+  ["#ex__kurou"] = "苦肉：你可以弃置一张牌并失去1点体力",
+  ["#yi__zhaxiang"] = "诈降：你可以摸三张牌并明置其中的非伤害牌",
+  ["#yi__zhaxiang_delay"] = "诈降",
+  ["#yi__zhaxiang_trigger"] = "诈降",
+  ["#yi__zhaxiang_slash"] = "诈降：你可视为使用一张无距离限制的火【杀】",
+
+  ["$ex__kurou1"] = "我这把老骨头，不算什么！",
+  ["$ex__kurou2"] = "为成大业，死不足惜！",
+  ["$yi__zhaxiang1"] = "铁锁连舟而行，东吴水师可破！",
+  ["$yi__zhaxiang2"] = "两军阵前，不斩降将！",
+  ["~yi__huanggai"] = "盖，有负公瑾重托……",
+}
+
 return extension
 
 -- local lvmeng = General(extension, "suzhi__lvmeng", "wu", 4)
