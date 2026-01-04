@@ -1,95 +1,95 @@
-local biyue = fk.CreateSkill {
-  name = "yi__biyue",
+local guanxing = fk.CreateSkill {
+  name = "yi__guanxing",
 }
 
 Fk:loadTranslationTable{
-  ["yi__biyue"] = "闭月",
-  [":yi__biyue"] = "结束阶段，你可将手牌摸至一名角色的体力上限（至多摸至5张），直至你下回合开始或失去此次获得的所有牌，其受到伤害后你弃一张牌。",
-  ["@@yi__biyue"] = "闭月",
-  ["@@yi__biyue-inhand"] = "闭月", 
-  ["#yi__biyue-choose"] = "闭月：你可将手牌摸至一名角色的体力上限",
+  ["yi__guanxing"] = "观星",
+  [":yi__guanxing"] = "准备阶段，你可将手牌摸至｛7｝张并视为使用一张【火攻】（若你因此成为手牌数唯一最多的角色或造成伤害，｛｝中的数字-1），"..
+  "然后将以此法获得的牌以任意顺序置于牌堆顶或牌堆底。",
+  ["#yi__guanxing"] = "观星：你可将手牌摸至%arg张，然后视为使用一张【火攻】",
+  ["@yi__guanxing"] = "观星",
+  ["@@yi__guanxing-inhand"] = "观星",
   
-  ["$yi__biyue1"] = "薄酒醉红颜，广袂羞掩面。",
-  ["$yi__biyue2"] = "芳草更芊芊，荷池映玉颜。",
+  ["$yi__guanxing1"] = "祈星辰之力，佑我蜀汉！",
+  ["$yi__guanxing2"] = "伏望天恩，誓讨汉贼！",
 }
 
-biyue:addEffect(fk.EventPhaseStart, {
-  anim_type = "drawcard",
+guanxing:addAcquireEffect(function (self, player, is_start)
+  player.room:setPlayerMark(player, "@yi__guanxing", 7)
+end)
+
+guanxing:addEffect(fk.EventPhaseStart, {
+  anim_type = "offensive",
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(biyue.name) and player.phase == Player.Finish and
-      #player.room:getOtherPlayers(player, false) > 0
+    return target == player and player:hasSkill(guanxing.name) and player.phase == Player.Start
   end,
   on_cost = function(self, event, target, player, data)
-    local room = player.room
-    local tos = room:askToChoosePlayers(player, {
-      targets = room:getOtherPlayers(player, false),
-      min_num = 1,
-      max_num = 1,
-      prompt = "#yi__biyue-choose",
-      skill_name = biyue.name,
-      cancelable = true,
+    return player.room:askToSkillInvoke(player, {
+      skill_name = guanxing.name,
+      prompt = "#yi__guanxing:::"..player:getMark("@yi__guanxing"),
     })
-    if #tos > 0 then
-      event:setCostData(self, {tos = tos})
-      return true
-    end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local to = event:getCostData(self).tos[1]
-    local num = math.min(5,math.max(0,  to.maxHp - player:getHandcardNum()))
-    if num == 0 then return end
-    room:setPlayerMark(to, "@@yi__biyue", 1)
-    local cards = player:drawCards(num, biyue.name)
-    for _, id in ipairs(cards) do
-      room:setCardMark(Fk:getCardById(id), "@@yi__biyue-inhand", 1)
+    local mark = math.floor(player:getMark("@yi__guanxing"))
+    local to_draw = math.max(0, mark - player:getHandcardNum())
+    if to_draw > 0 then
+      player:drawCards(to_draw, guanxing.name, "top", "@@yi__guanxing-inhand")
     end
-  end,
-})
 
-biyue:addEffect(fk.Damaged, {
-  prompt = "#yi__biyue",
-  can_trigger = function(self, event, target, player, data)
-    return target:getMark("@@yi__biyue") > 0 and player:hasSkill(biyue.name)
-  end,
-  on_trigger = function(self, event, target, player, data)
-    local room = player.room
-    local biyue_cards = table.filter(player:getCardIds(Player.Hand), function (id)
+    local remove = false
+    if table.every(player.room.alive_players, function (p)
+        return p == player or p:getHandcardNum() < player:getHandcardNum()
+      end) then
+      remove = true 
+    end
+      
+    local use = room:askToUseVirtualCard(player, {
+      name = "fire_attack",
+      skill_name = guanxing.name,
+      cancelable = false,
+    })
+    if use and use.damageDealt then
+      remove = true 
+    end
+    if remove then
+      room:notifySkillInvoked(player, guanxing.name, "negative")
+      room:removePlayerMark(player, "@yi__guanxing", 1)
+    end
+    local guanxing_cards = table.filter(player:getCardIds(Player.Hand), function (id)
       local card = Fk:getCardById(id)
-      return card:getMark("@@yi__biyue-inhand") > 0
+      return card:getMark("@@yi__guanxing-inhand") > 0
     end)
-    if #biyue_cards == 0 then return end
-    room:askToDiscard(player, {
-        min_num = 1,
-        max_num = 1,
-        include_equip = true,
-        skill_name = biyue.name,
-        cancelable = false,
+    if #guanxing_cards > 0 then
+      local result = room:askToGuanxing(player, {
+        cards = guanxing_cards,
+        skill_name = guanxing.name,
+        skip = true,
       })
+      local top, bottom = result.top, result.bottom
+      room:moveCards({
+        ids = top,
+        from = player,
+        toArea = Card.DrawPile,
+        moveReason = fk.ReasonJustMove,
+        skillName = guanxing.name,
+        proposer = player,
+        drawPilePosition = 1,
+      })
+      room:moveCards({
+        ids = bottom,
+        from = player,
+        toArea = Card.DrawPile,
+        moveReason = fk.ReasonJustMove,
+        skillName = guanxing.name,
+        proposer = player,
+        drawPilePosition = -1,
+      })
+    end
   end,
 })
 
-biyue:addEffect(fk.TurnStart, {
-  can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(biyue.name)
-  end,
-  on_trigger = function(self, event, target, player, data)
-    local room = player.room
-    local biyue_cards = table.filter(player:getCardIds(Player.Hand), function (id)
-      local card = Fk:getCardById(id)
-      return card:getMark("@@yi__biyue-inhand") > 0
-    end)
-    for _, id in ipairs(biyue_cards) do
-      local card = Fk:getCardById(id)
-      room:setCardMark(card, "@@yi__biyue-inhand", 0)
-    end
-    for _, p in ipairs(room.alive_players) do
-      room:setPlayerMark(p, "@@yi__biyue", 0)
-    end
-  end,
-})
-
-return biyue
+return guanxing
 
 -- local zhaxiang = fk.CreateTriggerSkill{
 --   name = "yi__zhaxiang",

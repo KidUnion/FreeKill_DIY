@@ -7,18 +7,61 @@ Fk:loadTranslationTable{
   ["yi"] = "异包",
 }
 
--- General:new(extension, "yi__guanyu", "shu", 4):addSkills { "yi__wusheng", "yi__yijue" }
--- Fk:loadTranslationTable{
---   ["yi__guanyu"] = "异关羽",
---   ["#yi__guanyu"] = "美髯公",
---   ["designer:yi__guanyu"] = "KidUnion",
+General:new(extension, "yi__huanggai", "wu", 4):addSkills { "ex__kurou", "yi__zhaxiang" }
+Fk:loadTranslationTable{
+  ["yi__huanggai"] = "异黄盖",
+  ["#yi__huanggai"] = "轻身焚舰",
+  ["designer:yi__huanggai"] = "KidUnion",
 
---   ["$yi__wusheng1"] = "刀锋所向，战无不克！",
---   ["$yi__wusheng2"] = "逆贼，哪里走！",
---   ["$yi__yijue1"] = "关某，向来恩怨分明！",
---   ["$yi__yijue2"] = "恩已断，义当绝！",
---   ["~yi__guanyu"] = "桃园一拜，恩义常在……",
--- }
+  ["$ex__kurou_yi__huanggai1"] = "我这把老骨头，不算什么！",
+  ["$ex__kurou_yi__huanggai2"] = "为成大业，死不足惜！",
+  ["~yi__huanggai"] = "盖，有负公瑾重托……",
+}
+
+General:new(extension, "yi__diaochan", "qun", 3, 3, General.Female):addSkills { "yi__lijian", "yi__biyue" }
+Fk:loadTranslationTable{
+  ["yi__diaochan"] = "异貂蝉",
+  ["#yi__diaochan"] = "乱世舞姬",
+  ["designer:yi__diaochan"] = "KidUnion",
+
+  ["~yi__diaochan"] = "舞罢人散，独留孤影……",
+}
+
+General:new(extension, "yi__luxun", "wu", 3):addSkills { "yi__qianxun", "yi__lianying" }
+Fk:loadTranslationTable{
+  ["yi__luxun"] = "异陆逊",
+  ["#yi__luxun"] = "儒生雄才",
+  ["designer:yi__luxun"] = "KidUnion",
+
+  ["~yi__luxun"] = "我的未竟之业……",
+}
+
+General:new(extension, "yi__zhugeliang", "shu", 3):addSkills { "yi__guanxing", "yi__kongcheng" }
+Fk:loadTranslationTable{
+  ["yi__zhugeliang"] = "异诸葛亮",
+  ["#yi__zhugeliang"] = "忠武智绝",
+  ["designer:yi__zhugeliang"] = "KidUnion",
+
+  ["~yi__zhugeliang"] = "将星陨落，天命难违……",
+}
+
+General:new(extension, "yi__guanyu", "shu", 4):addSkills { "yi__wusheng", "yi__yijue" }
+Fk:loadTranslationTable{
+  ["yi__guanyu"] = "异关羽",
+  ["#yi__guanyu"] = "美髯公",
+  ["designer:yi__guanyu"] = "KidUnion",
+
+  ["~yi__guanyu"] = "桃园一拜，恩义常在……",
+}
+
+General:new(extension, "yi__zhangliao", "wei", 4):addSkills { "yi__tuxi" }
+Fk:loadTranslationTable{
+  ["yi__zhangliao"] = "异张辽",
+  ["#yi__zhangliao"] = "震津止啼",
+  ["designer:yi__zhangliao"] = "KidUnion",
+
+  ["~yi__zhangliao"] = "被敌人占了先机啊……",
+}
 
 -- General:new(extension, "yi__wangping", "shu", 4):addSkills { "yi__feijun", "yi__binglue" }
 -- Fk:loadTranslationTable{
@@ -53,34 +96,7 @@ Fk:loadTranslationTable{
 --   ["~yi__yuanshu"] = "蜜水……蜜水……",
 -- }
 
-General:new(extension, "yi__huanggai", "wu", 4):addSkills { "ex__kurou", "yi__zhaxiang" }
-Fk:loadTranslationTable{
-  ["yi__huanggai"] = "异黄盖",
-  ["#yi__huanggai"] = "轻身焚舰",
-  ["designer:yi__huanggai"] = "KidUnion",
 
-  ["$ex__kurou_yi__huanggai1"] = "我这把老骨头，不算什么！",
-  ["$ex__kurou_yi__huanggai2"] = "为成大业，死不足惜！",
-  ["~yi__huanggai"] = "盖，有负公瑾重托……",
-}
-
-General:new(extension, "yi__diaochan", "qun", 3, 3, General.Female):addSkills { "yi__lijian", "yi__biyue" }
-Fk:loadTranslationTable{
-  ["yi__diaochan"] = "异貂蝉",
-  ["#yi__diaochan"] = "乱世舞姬",
-  ["designer:yi__diaochan"] = "KidUnion",
-
-  ["~yi__diaochan"] = "舞罢人散，独留孤影……",
-}
-
-General:new(extension, "yi__luxun", "wu", 3):addSkills { "yi__qianxun", "yi__lianying" }
-Fk:loadTranslationTable{
-  ["yi__luxun"] = "异陆逊",
-  ["#yi__luxun"] = "儒生雄才",
-  ["designer:yi__luxun"] = "KidUnion",
-
-  ["~yi__luxun"] = "我的未竟之业……",
-}
 
 return extension
 

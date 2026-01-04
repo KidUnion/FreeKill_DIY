@@ -1,78 +1,102 @@
-local lijian = fk.CreateSkill {
-  name = "yi__lijian",
+local wusheng = fk.CreateSkill {
+  name = "yi__wusheng",
 }
 
 Fk:loadTranslationTable{
-  ["yi__lijian"] = "离间",
-  [":yi__lijian"] = "出牌阶段限一次，你可以弃置一张牌并令两名其他角色依次弃置对方一张手牌，若为此花色的牌或伤害牌，则对对方造成1点伤害。",
-  ["#yi__lijian-active"] = "离间：你可以弃置一张牌，令两名其他角色依次弃置对方一张手牌",
-  
-  ["$yi__lijian1"] = "太师若献妾于吕布，妾宁死不受此辱。",
-  ["$yi__lijian2"] = "贱妾污浊之身，岂可复侍将军。",
+  ["yi__wusheng"] = "武圣",
+  [":yi__wusheng"] = "出牌阶段各限一次，你可将手牌弃至/摸至X张，视为使用一张无距离次数限制的【杀】/【决斗】。（X为你本回合使用牌的花色数且包含无色）",
+  ["#yi__wusheng-draw"] = "发动【武圣】，摸%arg张牌并视为使用一张【决斗】",
+  ["#yi__wusheng-discard"] = "发动【武圣】，弃置%arg张手牌并视为使用一张【杀】",
+  ["@yi__wusheng-turn"] = "武圣",
+  ["#yi__wusheng_slash"] = "武圣：视为使用一张无距离次数限制的【杀】",
+  ["#yi__wusheng_duel"] = "武圣：视为使用一张【决斗】",
+
+  ["$yi__wusheng1"] = "刀锋所向，战无不克！",
+  ["$yi__wusheng2"] = "逆贼，哪里走！",
 }
 
-lijian:addEffect("active", {
+wusheng:addEffect("active", {
   anim_type = "offensive",
-  prompt = "#yi__lijian-active",
-  max_phase_use_time = 1,
-  card_num = 1,
-  target_num = 2,
-  card_filter = function(self, player, to_select, selected)
-    return #selected == 0 and not player:prohibitDiscard(to_select)
+  card_num = function(self, player)
+    return math.max(0, player:getHandcardNum() - #player:getTableMark("@yi__wusheng-turn"))
   end,
-  target_filter = function(self, player, to_select, selected)
-    if #selected < 2 and to_select ~= player and not to_select:isKongcheng() then
-      if #selected == 0 then
-        return true
-      else
-        return to_select ~= selected[1]
-      end
+  prompt = function(self, player)
+    local num = player:getHandcardNum() - #player:getTableMark("@yi__wusheng-turn")
+    if num < 0 then
+      return "#yi__wusheng-draw:::"..-num
+    else
+      return "#yi__wusheng-discard:::"..num
     end
+  end,
+  card_filter = function(self, player, to_select, selected)
+    return #selected < player:getHandcardNum() - #player:getTableMark("@yi__wusheng-turn") and
+      table.contains(player:getCardIds("h"), to_select) and 
+      not player:prohibitDiscard(Fk:getCardById(to_select))
+  end,
+  can_use = function(self, player)
+    return (player:getHandcardNum() < #player:getTableMark("@yi__wusheng-turn") and player:getMark("yi__wusheng_draw-phase") == 0) or
+      (player:getHandcardNum() > #player:getTableMark("@yi__wusheng-turn") and player:getMark("yi__wusheng_discard-phase") == 0)
   end,
   on_use = function(self, room, effect)
     local player = effect.from
-    local suit = Fk:getCardById(effect.cards[1]).suit
-    room:throwCard(effect.cards, lijian.name, player, player)
-    room:sortByAction(effect.tos)
-    if not effect.tos[1].dead and not effect.tos[2].dead and not effect.tos[2]:isKongcheng() then
-      local id = room:askToChooseCard(effect.tos[1], {
-        target = effect.tos[2],
-        flag = "h",
-        skill_name = lijian.name,
+    if #effect.cards > 0 then
+      room:addPlayerMark(player, "yi__wusheng_discard-phase", 1)
+      room:throwCard(effect.cards, self.name, player, player)
+      room:askToUseVirtualCard(player, {
+        name = "slash",
+        prompt = "#yi__wusheng_slash",
+        cancelable = false,
+        skill_name = wusheng.name,
+        extra_data = {
+          bypass_distances = true,
+          bypass_times = true,
+        },
       })
-      local card = Fk:getCardById(id)
-      room:throwCard(card, lijian.name, effect.tos[2], effect.tos[1])
-      if card.suit == suit or card.is_damage_card then
-        room:damage{
-          from = effect.tos[1],
-          to = effect.tos[2],
-          damage = 1,
-          skillName = lijian.name,
-        }
-      end
-    end
-    if not effect.tos[2].dead and not effect.tos[1].dead and not effect.tos[1]:isKongcheng() then
-      local id = room:askToChooseCard(effect.tos[2], {
-        target = effect.tos[1],
-        flag = "h",
-        skill_name = lijian.name,
-      })
-      local card = Fk:getCardById(id)
-      room:throwCard(card, lijian.name, effect.tos[1], effect.tos[2])
-      if card.suit == suit or card.is_damage_card then
-        room:damage{
-          from = effect.tos[2],
-          to = effect.tos[1],
-          damage = 1,
-          skillName = lijian.name,
-        }
-      end
+    else
+      local num = #player:getTableMark("@yi__wusheng-turn") - player:getHandcardNum()
+      room:addPlayerMark(player, "yi__wusheng_draw-phase", 1)
+      if num > 0 then
+        room:drawCards(player, num, self.name)
+        room:askToUseVirtualCard(player, {
+        name = "duel",
+          prompt = "#yi__wusheng_duel",
+          cancelable = false,
+          skill_name = wusheng.name,
+        })
+      end 
     end
   end,
 })
 
+wusheng:addEffect(fk.CardUsing, {
+  name = "#yi__wusheng_trigger",
+  mute = true,
+  can_trigger = function (self, event, target, player, data)
+    return player == target and player:hasSkill(self, true)
+    and not table.contains(player:getTableMark("@yi__wusheng-turn"), data.card:getSuitString(true))
+  end,
+  on_trigger = function (self, event, target, player, data)
+    player.room:addTableMark(player, "@yi__wusheng-turn", data.card:getSuitString(true))
+  end,
 
-return lijian
+  on_acquire = function (self, player, is_start)
+    local room = player.room
+    if player ~= player.room.current then return end
+    local mark = {}
+    room.logic:getEventsOfScope(GameEvent.UseCard, 999, function(e)
+      local use = e.data[1]
+      if use.from == player.id then
+        table.insertIfNeed(mark, use.card:getSuitString(true))
+      end
+    end, Player.HistoryTurn)
+    room:setPlayerMark(player, "@yi__wusheng-turn", #mark > 0 and mark or 0)
+  end,
+  on_lose = function (self, player, is_start)
+    player.room:setPlayerMark(player, "@yi__wusheng-turn", 0)
+  end,
+})
+
+return wusheng
 
 -- zhaxiang:addEffect(fk.HpLost, {
 --   anim_type = "drawcard",
@@ -156,77 +180,6 @@ return lijian
 --     room:useVirtualCard("fire__slash", nil, player, targets, zhaxiang.name, true)
 --   end,
 -- })
-
--- local zhaxiang = fk.CreateTriggerSkill{
---   name = "yi__zhaxiang",
---   anim_type = "drawcard",
---   prompt = "#yi__zhaxiang",
---   events = {fk.HpLost},
---   on_trigger = function(self, event, target, player, data)
---     for i = 1, data.num do
---       if i > 1 and not player:hasSkill(self) then break end
---       self:doCost(event, target, player, data)
---     end
---   end,
---   on_use = function(self, event, target, player, data)
---     local room = player.room
---     local cards = player:drawCards(3, self.name)
---     local visible = {}
---     for _, id in ipairs(cards) do
---       local card = Fk:getCardById(id)
---       if(not card.is_damage_card) then
---         room:setCardMark(card, "@@visible", 1)
---         table.insert(visible, id)
---       else 
---         room:setCardMark(card, "@@yi__zhaxiang_damage", 1)
---       end
---     end
---     player:showCards(visible)
---   end,
--- }
--- local zhaxiang_delay = fk.CreateTriggerSkill{
---   name = "#yi__zhaxiang_delay",
---   refresh_events = {fk.PreCardUse},
---   can_refresh = function(self, event, target, player, data)
---     return player == target and data.card:getMark("@@yi__zhaxiang_damage") > 0
---   end,
---   on_refresh = function(self, event, target, player, data)
---     data.disresponsiveList = table.map(player.room.alive_players, Util.IdMapper)
---   end,
--- }
--- local zhaxiang_trigger = fk.CreateTriggerSkill{
---   name = "#yi__zhaxiang_trigger",
---   mute = true,
---   events = {fk.AfterCardsMove},
---   can_trigger = function(self, event, target, player, data)
---     if player.dead or not player:hasSkill("yi__zhaxiang") then return false end
---     local suits = player:getTableMark("@yi__zhaxiang-round")
---     if #suits == 4 then return false end
---     local suit, can_use = nil, false
---     for _, move in ipairs(data) do
---       if move.from == player.id then
---         for _, info in ipairs(move.moveInfo) do
---           local card = Fk:getCardById(info.cardId)
---           suit = card:getSuitString(true)
---           if card:getMark("@@visible") > 0 or info.fromArea == Card.PlayerEquip then
---             card:setMark("@@visible", 0)
---             if not table.contains(suits, suit) and suit ~= Card.NoSuit then
---               player.room:addTableMark(player, "@yi__zhaxiang-round", suit)
---               can_use = true
---             end
---           end
---         end
---       end
---       return can_use
---     end
---   end,
---   on_cost = Util.TrueFunc,
---   on_use = function(self, event, target, player, data)
---     local room = player.room
---     U.askForUseVirtualCard(room, player, "fire__slash", nil, self.name, "#yi__zhaxiang_slash", 
---     true, true, true)
---   end,
--- }
 
 -- dangxian:addEffect(fk.TurnStart, {
 --   anim_type = "offensive",

@@ -1,95 +1,132 @@
-local biyue = fk.CreateSkill {
-  name = "yi__biyue",
+local yijue = fk.CreateSkill {
+  name = "yi__yijue",
+  tags = {Skill.Compulsory},
 }
 
 Fk:loadTranslationTable{
-  ["yi__biyue"] = "闭月",
-  [":yi__biyue"] = "结束阶段，你可将手牌摸至一名角色的体力上限（至多摸至5张），直至你下回合开始或失去此次获得的所有牌，其受到伤害后你弃一张牌。",
-  ["@@yi__biyue"] = "闭月",
-  ["@@yi__biyue-inhand"] = "闭月", 
-  ["#yi__biyue-choose"] = "闭月：你可将手牌摸至一名角色的体力上限",
-  
-  ["$yi__biyue1"] = "薄酒醉红颜，广袂羞掩面。",
-  ["$yi__biyue2"] = "芳草更芊芊，荷池映玉颜。",
+  ["yi__yijue"] = "义绝",
+  [":yi__yijue"] = "锁定技，防止一名角色对你造成的首次致命伤害，若如此做，防止你对其造成的下一次致命伤害。",
+  ["#yi__yijue_delay"] = "义绝",
+  ["@@yi__yi"] = "义",
+  ["@@yi__yijue"] = "义绝",
+
+  ["$yi__yijue1"] = "关某，向来恩怨分明！",
+  ["$yi__yijue2"] = "恩已断，义当绝！",
 }
 
-biyue:addEffect(fk.EventPhaseStart, {
-  anim_type = "drawcard",
+yijue:addEffect(fk.DamageInflicted, {
+  anim_type = "defensive",
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(biyue.name) and player.phase == Player.Finish and
-      #player.room:getOtherPlayers(player, false) > 0
-  end,
-  on_cost = function(self, event, target, player, data)
-    local room = player.room
-    local tos = room:askToChoosePlayers(player, {
-      targets = room:getOtherPlayers(player, false),
-      min_num = 1,
-      max_num = 1,
-      prompt = "#yi__biyue-choose",
-      skill_name = biyue.name,
-      cancelable = true,
-    })
-    if #tos > 0 then
-      event:setCostData(self, {tos = tos})
-      return true
-    end
+    return target == player and player:hasSkill(self) and data.damage >= player.hp and data.from and
+      data.from:getMark("@@yi__yi") ~= player.id and data.from:getMark("@@yi__yijue") ~= player.id
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local to = event:getCostData(self).tos[1]
-    local num = math.min(5,math.max(0,  to.maxHp - player:getHandcardNum()))
-    if num == 0 then return end
-    room:setPlayerMark(to, "@@yi__biyue", 1)
-    local cards = player:drawCards(num, biyue.name)
-    for _, id in ipairs(cards) do
-      room:setCardMark(Fk:getCardById(id), "@@yi__biyue-inhand", 1)
-    end
+    player.room:doIndicate(player.id, {data.from.id})
+    room:setPlayerMark(data.from, "@@yi__yi", player.id)
+    data:preventDamage()
   end,
 })
 
-biyue:addEffect(fk.Damaged, {
-  prompt = "#yi__biyue",
+yijue:addEffect(fk.DamageInflicted, {
+  anim_type = "defensive",
   can_trigger = function(self, event, target, player, data)
-    return target:getMark("@@yi__biyue") > 0 and player:hasSkill(biyue.name)
+    return data.from and data.from == player and player:hasSkill(self) and data.damage >= target.hp and
+    target:getMark("@@yi__yi") == player.id
   end,
-  on_trigger = function(self, event, target, player, data)
+  on_use = function(self, event, target, player, data)
     local room = player.room
-    local biyue_cards = table.filter(player:getCardIds(Player.Hand), function (id)
-      local card = Fk:getCardById(id)
-      return card:getMark("@@yi__biyue-inhand") > 0
-    end)
-    if #biyue_cards == 0 then return end
-    room:askToDiscard(player, {
-        min_num = 1,
-        max_num = 1,
-        include_equip = true,
-        skill_name = biyue.name,
-        cancelable = false,
-      })
+    player.room:doIndicate(player.id, {target.id})
+    room:setPlayerMark(target, "@@yi__yi", 0)
+    room:setPlayerMark(target, "@@yi__yijue", player.id)
+    data:preventDamage()
   end,
 })
 
-biyue:addEffect(fk.TurnStart, {
-  can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(biyue.name)
-  end,
-  on_trigger = function(self, event, target, player, data)
-    local room = player.room
-    local biyue_cards = table.filter(player:getCardIds(Player.Hand), function (id)
-      local card = Fk:getCardById(id)
-      return card:getMark("@@yi__biyue-inhand") > 0
-    end)
-    for _, id in ipairs(biyue_cards) do
-      local card = Fk:getCardById(id)
-      room:setCardMark(card, "@@yi__biyue-inhand", 0)
-    end
-    for _, p in ipairs(room.alive_players) do
-      room:setPlayerMark(p, "@@yi__biyue", 0)
-    end
-  end,
-})
+return yijue
 
-return biyue
+-- zhaxiang:addEffect(fk.HpLost, {
+--   anim_type = "drawcard",
+--   can_trigger = function(self, event, target, player, data)
+--     return target == player and player:hasSkill(zhaxiang.name)
+--   end,
+--   on_use = function(self, event, target, player, data)
+--     local room = player.room
+--     local cards = player:drawCards(3, self.name)
+--     local visible = {}
+--     for _, id in ipairs(cards) do
+--       local card = Fk:getCardById(id)
+--       if(not card.is_damage_card) then
+--         room:setCardMark(card, "@@visible", 1)
+--         table.insert(visible, id)
+--       else 
+--         room:setCardMark(card, "@@yi__zhaxiang_damage", 1)
+--       end
+--     end
+--     player:showCards(visible)
+--   end,
+-- })
+
+-- zhaxiang:addEffect(fk.PreCardUse, {
+--   can_refresh = function(self, event, target, player, data)
+--     return player == target and data.card:getMark("@@yi__zhaxiang_damage") > 0
+--   end,
+--   on_refresh = function(self, event, target, player, data)
+--     data.disresponsiveList = table.simpleClone(player.room.alive_players)
+--   end,
+-- })
+
+-- zhaxiang:addEffect(fk.AfterCardsMove, {
+--   mute = true,
+--   can_trigger = function(self, event, target, player, data)
+--     if player.dead or not player:hasSkill(zhaxiang.name) then return false end
+--     local suits = player:getTableMark("@yi__zhaxiang-round")
+--     if #suits == 4 then return false end
+--     local suit, can_use = nil, false
+--     for _, move in ipairs(data) do
+--       if move.from == player then
+--         for _, info in ipairs(move.moveInfo) do
+--           local card = Fk:getCardById(info.cardId)
+--           suit = card:getSuitString(true)
+--           if card:getMark("@@visible") > 0 or info.fromArea == Card.PlayerEquip then
+--             card:setMark("@@visible", 0)
+--             if not table.contains(suits, suit) and suit ~= Card.NoSuit then
+--               player.room:addTableMark(player, "@yi__zhaxiang-round", suit)
+--               can_use = true
+--             end
+--           end
+--         end
+--       end
+--       return can_use
+--     end
+--   end,
+--   on_cost = function(self, event, target, player, data)
+--     local room = player.room
+--     local slash = Fk:cloneCard("slash")
+--     local max_num = slash.skill:getMaxTargetNum(player, slash)
+--     local targets = table.filter(room:getOtherPlayers(player, false), function (p)
+--       return player:canUseTo(slash, p, {bypass_distances = true, bypass_times = true})
+--     end)
+--     local tos = room:askToChoosePlayers(player, {
+--       min_num = 1,
+--       max_num = max_num,
+--       targets = targets,
+--       skill_name = zhaxiang.name,
+--       prompt = "#yi__zhaxiang-choose",
+--       cancelable = true,
+--     })
+--     if #tos > 0 then
+--       event:setCostData(self, {tos = tos})
+--       return true
+--     end
+--   end,
+--   on_use = function(self, event, target, player, data)
+--     local room = player.room
+--     local targets = event:getCostData(self).tos
+--     room:sortByAction(targets)
+--     room:useVirtualCard("fire__slash", nil, player, targets, zhaxiang.name, true)
+--   end,
+-- })
 
 -- local zhaxiang = fk.CreateTriggerSkill{
 --   name = "yi__zhaxiang",

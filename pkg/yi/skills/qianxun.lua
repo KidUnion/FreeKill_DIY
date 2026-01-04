@@ -5,7 +5,7 @@ local qianxun = fk.CreateSkill {
 Fk:loadTranslationTable{
 	["yi__qianxun"] = "谦逊",
   [":yi__qianxun"] = "每回合限一次，当你成为锦囊牌的目标时，你可弃置与之颜色相同的所有手牌并取消你为目标。",
-  ["#yi__qianxun-invoke"] = "发动【谦逊】，弃置所有%arg色的手牌，取消你为目标",
+  ["#yi__qianxun-invoke"] = "谦逊：你可弃置所有%arg色的手牌，取消你为目标",
 
   ["$yi__qianxun1"] = "满招损，谦受益。",
   ["$yi__qianxun2"] = "谦谦君子，温润如玉。",

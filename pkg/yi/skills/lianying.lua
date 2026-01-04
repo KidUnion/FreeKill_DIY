@@ -6,9 +6,8 @@ Fk:loadTranslationTable{
 	["yi__lianying"] = "连营",
   [":yi__lianying"] = "当你使用一种花色的最后一张手牌时，你可令此牌不计次数或额外结算一次；"..
   "当你非因使用失去一种花色的最后一张手牌时，你可观看牌堆顶一张牌并将之交给一名角色。",
-  ["#yi__lianying-other"] = "发动【连营】，观看牌堆顶一张牌并分配",
-  ["#yi__lianying-give"] = "连营：将此牌交给一名角色",
-  ["#yi__lianying-choose"] = "连营：选择令此牌不计次数或额外结算一次",
+  ["#yi__lianying-give"] = "连营：你可观看牌堆顶一张牌并分配",
+  ["#yi__lianying-choose"] = "连营：你可令此牌不计次数或额外结算一次",
 
   ["$yi__lianying1"] = "生生不息，源源不绝。",
   ["$yi__lianying2"] = "失之淡然，得之坦然。",
@@ -16,7 +15,7 @@ Fk:loadTranslationTable{
 
 lianying:addEffect(fk.AfterCardsMove, {
   anim_type = "special",
-  prompt = "#yi__lianying-other",
+  prompt = "#yi__lianying-give",
   can_trigger = function(self, event, target, player, data)
     if player:hasSkill(lianying.name) then
       for _, move in ipairs(data) do
