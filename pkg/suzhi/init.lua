@@ -5,477 +5,71 @@ extension:loadSkillSkelsByPath("./packages/DIY/pkg/suzhi/skills")
 
 Fk:loadTranslationTable{
   ["suzhi"] = "素质杀",
-}
-
-General:new(extension, "xuzhicheng", "shu", 4):addSkills { "shangzeng", "luanjuan" }
-Fk:loadTranslationTable{
-  ["xuzhicheng"] = "徐志诚",
-  ["#xuzhicheng"] = "危言危行",
-  ["designer:xuzhicheng"] = "KidUnion",
-
-  ["~xuzhicheng"] = "我……我输了……",
-}
-
--- General:new(extension, "yujiajiang", "wei", 4):addSkills { "refeng", "miyan" }
--- Fk:loadTranslationTable{
---   ["yujiajiang"] = "喻家江",
---   ["#yujiajiang"] = "老大",
---   ["designer:yujiajiang"] = "KidUnion",
-
---   ["~yujiajiang"] = "我……我输了……",
--- }
-
--- General:new(extension, "chenbaohai", "wei", 4):addSkills { "tihai" }
--- Fk:loadTranslationTable{
---   ["chenbaohai"] = "陈宝海",
---   ["#chenbaohai"] = "海宝",
---   ["designer:chenbaohai"] = "KidUnion",
-
---   ["~chenbaohai"] = "我……我输了……",
--- }
-
--- General:new(extension, "zhouyunjie", "qun", 3):addSkills { "raoshe" }
--- Fk:loadTranslationTable{
---   ["zhouyunjie"] = "周云杰",
---   ["#zhouyunjie"] = "黑神",
---   ["designer:zhouyunjie"] = "KidUnion",
-
---   ["~zhouyunjie"] = "我……我输了……",
--- }
-
--- General:new(extension, "quanzezhi", "qun", 4):addSkills { "suzhi_wangyue", "zuiquan" }
--- Fk:loadTranslationTable{
---   ["quanzezhi"] = "全泽之",
---   ["#quanzezhi"] = "僧",
---   ["designer:quanzezhi"] = "KidUnion",
-
---   ["~quanzezhi"] = "我……我输了……",
--- }
-
--- General:new(extension, "weijiayan", "shu", 4):addSkills { "lvji", "wumian" }
--- Fk:loadTranslationTable{
---   ["weijiayan"] = "魏家炎",
---   ["#weijiayan"] = "无眠的卷王",
---   ["designer:weijiayan"] = "KidUnion",
-
---   ["~weijiayan"] = "我……我输了……",
--- }
-
--- General:new(extension, "lubing", "wu", 3):addSkills { "lvdong", "renlun" }
--- Fk:loadTranslationTable{
---   ["lubing"] = "陆彬",
---   ["#lubing"] = "节奏大师",
---   ["designer:lubing"] = "KidUnion",
---   ["~lubing"] = "我……我输了……",
--- }
-
-return extension
-
--- local extension = Package:new("suzhi")
--- extension.extensionName = "DIY"
-
--- local U = require "packages/utility/utility"
-
--- Fk:loadTranslationTable{
---   ["suzhi"] = "素质杀",
--- }
-
--- -- 徐志诚
--- local xuzhicheng = General(extension, "xuzhicheng", "shu", 4)
--- local shangzeng = fk.CreateActiveSkill{
---   name = "shangzeng",
---   prompt = "#shangzeng-active",
---   anim_type = "drawcard",
---   can_use = function(self, player)
---     return player:hasSkill(self) and player:usedSkillTimes(self.name, Player.HistoryRound) == 0 
---       and #player:getCardIds(Player.Hand) > 0
---   end,
---   card_filter = Util.FalseFunc,
---   on_use = function(self, room, effect)
---     local player = room:getPlayerById(effect.from)
---     local show_cards = player:getCardIds(Player.Hand)
---     player:showCards(show_cards)
---     room:addPlayerMark(player, "shangzeng-turn", 1)
---     local cards_suits = {}
---     for _, id in ipairs(show_cards) do
---       local card = Fk:getCardById(id)
---       if not table.contains(cards_suits, card.suit) then
---         table.insert(cards_suits, card.suit)
---       end
---     end
---     local top_cards = room:getNCards(5)
---     room:moveCardTo(top_cards, Card.Processing)
---     room:delay(500)
---     local match = {}
---     for _, id in ipairs(top_cards) do
---       local card = Fk:getCardById(id)
---       if not table.contains(cards_suits, card.suit) then
---         table.insert(match, card)
---       end
---     end
---     room:moveCardTo(match, Player.Hand, player, fk.ReasonPrey, self.name)
---     local cardsInProcessing = table.filter(top_cards, function(id) return room:getCardArea(id) == Card.Processing end)
---     if #cardsInProcessing > 0 then
---       room:moveCardTo(cardsInProcessing, Card.DiscardPile)
---     end
---   end,
--- }
--- local shangzeng_targetmod = fk.CreateTargetModSkill{
---   name = "#shangzeng_targetmod",
---   bypass_times = function(self, player, skill, scope, card)
---     return card and player:hasSkill(shangzeng) and player:getMark("shangzeng-turn") > 0
---   end,
---   bypass_distances = function(self, player, skill, card)
---     return card and player:hasSkill(shangzeng) and player:getMark("shangzeng-turn") > 0
---   end,
--- }
--- local shangzeng_trigger = fk.CreateTriggerSkill{
---   name = "#shangzeng_trigger",
---   mute = true,
---   events = {fk.AfterCardUseDeclared},
---   can_trigger = function(self, event, target, player, data)
---     return player == target and player:hasSkill(shangzeng) and player:getMark("shangzeng-turn") > 0
---   end,
---   on_cost = Util.TrueFunc,
---   on_use = function(self, event, target, player, data)
---     if not (data.card:isVirtual() and #data.card.subcards == 0) then
---       local card = Fk:cloneCard(data.card.name, data.card.suit, data.card.number)
---       for k, v in pairs(data.card) do
---         if card[k] == nil then
---           card[k] = v
---         end
---       end
---       if data.card:isVirtual() then
---         card.subcards = data.card.subcards
---       else
---         card.id = data.card.id
---       end
---       card.skillNames = data.card.skillNames
---       card.skillName = "shangzeng"
---       card.suit = Card.NoSuit
---       card.color = Card.NoColor
---       data.card = card
---     end
---     local room = player.room
---     room:setPlayerMark(player, "shangzeng-turn", 0)
---   end,
--- }
--- local luanjuan = fk.CreateTriggerSkill{
---   name = "luanjuan",
---   mute = true,
---   events = {},
-
---   refresh_events = {fk.CardUsing},
---   can_refresh = function (self, event, target, player, data)
---     return player == target and player:hasSkill(self, true) and data.card.suit ~= Card.NoSuit
---     and not table.contains(player:getTableMark("@luanjuan-turn"), data.card:getSuitString(true))
---   end,
---   on_refresh = function (self, event, target, player, data)
---     player.room:addTableMark(player, "@luanjuan-turn", data.card:getSuitString(true))
---   end,
-
---   on_acquire = function (self, player, is_start)
---     local room = player.room
---     if player ~= player.room.current then return end
---     local mark = {}
---     room.logic:getEventsOfScope(GameEvent.UseCard, 999, function(e)
---       local use = e.data[1]
---       if use.from == player.id and use.card.suit ~= Card.NoSuit then
---         table.insertIfNeed(mark, use.card:getSuitString(true))
---       end
---     end, Player.HistoryTurn)
---     room:setPlayerMark(player, "@luanjuan-turn", #mark > 0 and mark or 0)
---   end,
--- }
--- local luanjuan_maxcards = fk.CreateMaxCardsSkill{
---   name = "#luanjuan_maxcards",
---   fixed_func = function(self, player)
---     if player:hasSkill(luanjuan) then
---       return (5 - #player:getTableMark("@luanjuan-turn"))
---     end
---   end,
--- }
--- shangzeng:addRelatedSkill(shangzeng_targetmod)
--- shangzeng:addRelatedSkill(shangzeng_trigger)
--- xuzhicheng:addSkill(shangzeng)
--- luanjuan:addRelatedSkill(luanjuan_maxcards)
--- xuzhicheng:addSkill(luanjuan)
--- Fk:loadTranslationTable{
---   ["xuzhicheng"] = "徐志诚",
---   ["#xuzhicheng"] = "危言危行",
---   ["designer:xuzhicheng"] = "KidUnion",
---   ["shangzeng"] = "熵增",
---   [":shangzeng"] = "出牌阶段限一次，你可展示手牌并亮出牌堆顶五张牌，然后获得其中花色与你的手牌均不同的牌；你本回合使用的下一张牌无距离次数限制且不计花色。",
---   ["#shangzeng-active"] = "发动〖熵增〗，展示手牌并亮出牌堆顶五张牌",
---   ["luanjuan"] = "乱卷",
---   [":luanjuan"] = "锁定技，你的手牌上限等于你本回合未使用过的花色数+1。",
-
---   ["$shangzeng"] = "熵增",
---   ["$luanjuan"] = "乱卷",
---   ["@luanjuan-turn"] = "乱卷",
-
---   ["~xuzhicheng"] = "我……我输了……",
--- }
-
--- -- 喻家江
--- local yujiajiang = General(extension, "yujiajiang", "wei", 4)
--- local refeng = fk.CreateActiveSkill{
---   name = "refeng",
---   anim_type = "offensive",
---   card_num = 1,
---   target_num = 1,
---   prompt = "#refeng-active",
---   can_use = function(self, player)
---     return player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
---   end,
---   target_filter = function(self, to_select, selected)
---     return #selected == 0 and to_select ~= Self.id
---   end,
---   card_filter = function(self, to_select, selected)
---     return #selected == 0
---   end,
---   on_use = function(self, room, effect)
---     local player = room:getPlayerById(effect.from)
---     local target = room:getPlayerById(effect.tos[1])
---     player:broadcastSkillInvoke("refeng")
---     local num = Fk:getCardById(effect.cards[1]).number
---     room:throwCard(effect.cards[1], self.name, player, player)
---     if player.dead then return end
---     room:setPlayerMark(player, "@refeng-turn", num)
---     room:setPlayerMark(target, "@@refeng_target-turn", player.id)
---     local all_choices = {"@@refeng1-turn", "@@refeng2-turn", "@@refeng3-turn", "@@refeng4-turn"}
---     local card = room:askForDiscard(target, 1, 4, true, self.name, false, ".", "#refeng-discard", false)
---     local choices = {}
---     if #card > 0 then
---       choices = room:askForChoices(target, all_choices, #card, #card, self.name, "#refeng-choose", false)
---     end
---     for _, choice in ipairs(all_choices) do
---       if not table.contains(choices, choice) then
---         room:setPlayerMark(player, choice, 1)
---       end
---     end
---   end,
--- }
--- local refeng_targetmod = fk.CreateTargetModSkill{
---   name = "#refeng_targetmod",
---   bypass_distances = function (self, player, skill, card, to)
---     return to:getMark("@@refeng_target-turn") == player.id and card.number > 0
---     and card.number <= player:getMark("@refeng-turn")
---   end,
--- }
--- local refeng_trigger = fk.CreateTriggerSkill{
---   name = "#refeng_trigger",
---   events = {fk.TargetSpecified, fk.DamageCaused},
---   can_trigger = function(self, event, target, player, data)
---     if event == fk.TargetSpecified then
---       local room = player.room
---       local to = room:getPlayerById(data.to)
---       return target == player and to:getMark("@@refeng_target-turn") == player.id and
---         (data.card.number > 0 and data.card.number <= player:getMark("@refeng-turn"))
---     elseif event == fk.DamageCaused then
---       return target == player and data.to:getMark("@@refeng_target-turn") == player.id and
---         (data.card.number > 0 and data.card.number <= player:getMark("@refeng-turn"))
---     end
---   end,
---   on_trigger = function(self, event, target, player, data)
---     if event == fk.TargetSpecified then
---       if player:getMark("@@refeng1-turn") > 0 then
---         player:drawCards(1, self.name)
---       end
---       if player:getMark("@@refeng3-turn") > 0 then
---         data.disresponsiveList = data.disresponsiveList or {}
---         table.insert(data.disresponsiveList, data.to)
---       end
---       if player:getMark("@@refeng4-turn") > 0 then
---         player:addCardUseHistory(data.card.trueName, -1)
---       end
---     elseif event == fk.DamageCaused then
---       if player:getMark("@@refeng2-turn") > 0 then
---         data.damage = data.damage + 1
---       end
---     end
---   end,
--- }
--- local miyan = fk.CreateTriggerSkill{
---   name = "miyan",
---   anim_type = "defensive",
---   events = {fk.TargetConfirming},
---   can_trigger = function(self, event, target, player, data)
---     return target == player and player:hasSkill(self) and data.card.trueName == "slash"
---   end,
---   on_cost = function(self, event, target, player, data)
---     local room = player.room
---     local targets = table.filter(room.alive_players, function(p) return player:inMyAttackRange(p) end)
---     if #targets < 1 then return end
---     local target, card =room:askForChooseCardAndPlayers(player, table.map(targets, Util.IdMapper), 
---     1, 1, nil, "#miyan-give", self.name , true)
---     if #target > 0 and card then
---       self.cost_data = {target[1], card}
---       room:obtainCard(target[1], card, false, fk.ReasonGive, player.id)
---       return true
---     end
---   end,
---   on_use = function(self, event, target, player, data)
---     local room = player.room
---     local choices = {"miyan2::"..self.cost_data[1]}
---     if not data.card:isVirtual() then
---       table.insert(choices, "miyan1")
---     end
---     local choice = room:askForChoice(player, choices, self.name, "#miyan-choose::"..self.cost_data[1], 
---     false, {"miyan1", "miyan2::"..self.cost_data[1]})
---     if choice == "miyan1" then
---       room:moveCardTo(data.card, Player.Hand, player, fk.ReasonPrey, self.name)
---     elseif choice == "miyan2::"..self.cost_data[1] then
---       local target = room:getPlayerById(self.cost_data[1])
---       local card = room:askForCard(target, 1, 1, false, self.name, false, nil, 
---       "#miyan-regive::"..player.id)
---       if #card > 0 then
---         room:obtainCard(player, card[1], false, fk.ReasonGive, self.cost_data[1])
---       end
---     end
---   end,
--- }
--- refeng:addRelatedSkill(refeng_targetmod)
--- refeng:addRelatedSkill(refeng_trigger)
--- yujiajiang:addSkill(refeng)
--- yujiajiang:addSkill(miyan)
--- Fk:loadTranslationTable{
---   ["yujiajiang"] = "喻家江",
---   ["#yujiajiang"] = "老大",
---   ["designer:yujiajiang"] = "KidUnion",
---   ["refeng"] = "热讽",
---   [":refeng"] = "出牌阶段限一次，你可以弃置一张牌（点数记为X）并指定一名其他角色，其弃置任意张牌并移除以下效果中的等量项直至回合结束。"..
---   "本回合你对其使用点数不大于X的牌无距离限制且执行剩余所有选项：1、你摸一张牌；2、此牌对其造成的伤害+1；3、其不能响应此牌；4、此牌不计次数。",
---   ["#refeng_trigger"] = "热讽",
---   ["#refeng-active"] = "发动〖热讽〗，弃置一张牌并指定一名其他角色",
---   ["#refeng-discard"] = "热讽：你须弃置任意张牌",
---   ["#refeng-choose"] = "热讽：移除等量选项",
---   ["miyan"] = "迷烟",
---   [":miyan"] = "当你成为【杀】的目标时，你可交给你攻击范围内的角色一张牌，然后获得此【杀】或令其交给你一张牌。",
---   ["#miyan-give"] = "迷烟：你可以交给攻击范围内的一名角色一张牌",
---   ["#miyan-choose"] = "迷烟：选择获得此【杀】或令%dest交给你一张牌",
---   ["miyan1"] = "获得此【杀】",
---   ["miyan2"] = "令%dest交给你一张牌",
---   ["#miyan-regive"] = "迷烟：交给%dest一张牌",
-
---   ["$refeng"] = "热讽",
---   ["@refeng-turn"] = "热讽",
---   ["@@refeng_target-turn"] = "被热讽",
---   ["@@refeng1-turn"] = "摸一张牌",
---   ["@@refeng2-turn"] = "伤害加一",
---   ["@@refeng3-turn"] = "不能响应",
---   ["@@refeng4-turn"] = "不计次数",
---   ["$miyan"] = "迷烟",
-
---   ["~yujiajiang"] = "我……我输了……",
--- }
-
--- -- 陈宝海
--- local chenbaohai = General(extension, "chenbaohai", "wei", 4)
--- local tihai = fk.CreateTriggerSkill{
---   name = "tihai",
---   anim_type = "offensive",
---   frequency = Skill.Compulsory,
---   events = {fk.EventPhaseStart},
---   can_trigger = function(self, event, target, player, data)
---     return target == player and player:hasSkill(self) and player.phase == Player.Finish
---   end,
---   on_use = function(self, event, target, player, data)
---     local num = #player:getTableMark("@tihai-turn") + player:getMark("@@tihai-plus")
---     local room = player.room
---     room:setPlayerMark(player, "@@tihai-plus", 1)
---     if num > 0 then
---       local top_cards = room:getNCards(num)
---       room:moveCardTo(top_cards, Card.Processing)
---       local to_use = {}
---       while not player.dead do
---         to_use = table.filter(top_cards, function (id)
---           local card = Fk:getCardById(id)
---           return room:getCardArea(id) == Card.Processing and player:canUse(card) and not player:prohibitUse(card)
---         end)
---         if #to_use == 0 then break end
---         local use = room:askForUseRealCard(player, to_use, self.name, "#tihai-use", {
---           bypass_times = true,
---           extraUse = true,
---           expand_pile = to_use,
---         }, true, true)
---         if use then
---           table.removeOne(top_cards, use.card:getEffectiveId())
---           room:useCard(use)
---           local n = Fk:translate(use.card.trueName, "zh_CN"):len()
---           top_cards = table.filter(top_cards, function (id)
---             local card = Fk:getCardById(id)
---             return room:getCardArea(id) == Card.Processing and Fk:translate(card.trueName, "zh_CN"):len() ~= n
---           end)
---         else
---           break
---         end
---       end
---       local cardsInProcessing = table.filter(top_cards, function(id) return room:getCardArea(id) == Card.Processing end)
---       if #cardsInProcessing > 0 then
---         room:moveCardTo(cardsInProcessing, Card.DiscardPile)
---       end
---     end
---   end,
---   refresh_events = {fk.CardUsing},
---   can_refresh = function (self, event, target, player, data)
---     return player == target and player:hasSkill(self, true) and 
---     data.card.suit ~= Card.NoSuit and player.room.current == player
---   end,
---   on_refresh = function (self, event, target, player, data)
---     local record = player:getTableMark("@tihai-turn")
---     local room = player.room
---     if table.contains(record, data.card:getSuitString(true)) then
---       local pattern = ".|.|^("
---       local flag = 0
---       local suits = {"spade", "heart", "club", "diamond"}
---       for _, suit in ipairs(suits) do
---         if table.contains(record, "log_"..suit) then
---           if flag == 1 then
---             pattern = pattern..","
---           else
---             flag = 1
---           end
---           pattern = pattern..suit
---         end
---       end
---       local cards = room:getCardsFromPileByRule(pattern..")", 1)
---       if #cards > 0 then
---         room:obtainCard(player, cards[1], false, fk.ReasonJustMove, player.id, self.name)
---       end
---     else 
---       room:addTableMark(player, "@tihai-turn", data.card:getSuitString(true))
---     end
---   end,
--- }
--- local tihai_trigger = fk.CreateTriggerSkill{
---   name = "#tihai_trigger",
---   frequency = Skill.Compulsory,
---   events = {fk.Damage},
---   can_trigger = function(self, event, target, player, data)
---     return player:hasSkill(self) and target == player and player.phase == Player.Finish
---   end,
---   on_trigger = function(self, event, target, player, data)
---     player.room:setPlayerMark(player, "@@tihai-plus", 0)
---   end
--- }
--- tihai:addRelatedSkill(tihai_trigger)
--- chenbaohai:addSkill(tihai)
--- Fk:loadTranslationTable{
---   ["chenbaohai"] = "陈宝海",
---   ["#chenbaohai"] = "海宝",
---   ["designer:chenbaohai"] = "KidUnion",
---   ["tihai"] = "题海",
---   [":tihai"] = "锁定技，当你于回合内使用牌时，若此牌花色未被记录，你记录之；否则你从牌堆中获得一张花色未被记录的牌。 \r\n"..
---   "结束阶段，你亮出牌堆顶等同于记录花色数的牌并可使用其中任意张牌名字数各不相同的牌，然后移除所有记录；若你此阶段未造成过伤害，下次亮出的牌数加一。",
-
---   ["$tihai"] = "题海",
---   ["@tihai-turn"] = "题海",
---   ["@@tihai-plus"] = "题海+1",
---   ["#tihai-use"] = "题海：你可使用其中任意张牌名字数各不相同的牌",
-
---   ["~chenbaohai"] = "我……我输了……",
--- }
+  }
+  
+  General:new(extension, "xuzhicheng", "shu", 4):addSkills { "shangzeng", "luanjuan" }
+  Fk:loadTranslationTable{
+    ["xuzhicheng"] = "徐志诚",
+    ["#xuzhicheng"] = "危言危行",
+    ["designer:xuzhicheng"] = "KidUnion",
+  
+    ["~xuzhicheng"] = "我……我输了……",
+  }
+  
+  General:new(extension, "yujiajiang", "wei", 4):addSkills { "refeng", "miyan" }
+  Fk:loadTranslationTable{
+    ["yujiajiang"] = "喻家江",
+    ["#yujiajiang"] = "老大",
+    ["designer:yujiajiang"] = "KidUnion",
+  
+    ["~yujiajiang"] = "我……我输了……",
+  }
+  
+  General:new(extension, "chenbaohai", "wei", 4):addSkills { "tihai" }
+  Fk:loadTranslationTable{
+    ["chenbaohai"] = "陈宝海",
+    ["#chenbaohai"] = "海宝",
+    ["designer:chenbaohai"] = "KidUnion",
+  
+    ["~chenbaohai"] = "我……我输了……",
+  }
+  
+  -- General:new(extension, "zhouyunjie", "qun", 3):addSkills { "raoshe" }
+  -- Fk:loadTranslationTable{
+  --   ["zhouyunjie"] = "周云杰",
+  --   ["#zhouyunjie"] = "黑神",
+  --   ["designer:zhouyunjie"] = "KidUnion",
+  
+  --   ["~zhouyunjie"] = "我……我输了……",
+  -- }
+  
+  -- General:new(extension, "quanzezhi", "qun", 4):addSkills { "suzhi_wangyue", "zuiquan" }
+  -- Fk:loadTranslationTable{
+  --   ["quanzezhi"] = "全泽之",
+  --   ["#quanzezhi"] = "僧",
+  --   ["designer:quanzezhi"] = "KidUnion",
+  
+  --   ["~quanzezhi"] = "我……我输了……",
+  -- }
+  
+  -- General:new(extension, "weijiayan", "shu", 4):addSkills { "lvji", "wumian" }
+  -- Fk:loadTranslationTable{
+  --   ["weijiayan"] = "魏家炎",
+  --   ["#weijiayan"] = "无眠的卷王",
+  --   ["designer:weijiayan"] = "KidUnion",
+  
+  --   ["~weijiayan"] = "我……我输了……",
+  -- }
+  
+  -- General:new(extension, "lubing", "wu", 3):addSkills { "lvdong", "renlun" }
+  -- Fk:loadTranslationTable{
+  --   ["lubing"] = "陆彬",
+  --   ["#lubing"] = "节奏大师",
+  --   ["designer:lubing"] = "KidUnion",
+  --   ["~lubing"] = "我……我输了……",
+  -- }
+  
+  return extension
 
 -- -- 周云杰
 -- local zhouyunjie = General(extension, "zhouyunjie", "qun", 3)

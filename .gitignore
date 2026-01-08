@@ -1,0 +1,3 @@
+# Ignore jpg files unless name starts with yi__
+*.jpg
+!yi__*.jpg
