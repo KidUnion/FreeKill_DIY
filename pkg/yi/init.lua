@@ -1,7 +1,7 @@
 local extension = Package:new("yi")
-extension.extensionName = "DIY"
+extension.extensionName = "FreeKill_DIY"
 
-extension:loadSkillSkelsByPath("./packages/DIY/pkg/yi/skills")
+extension:loadSkillSkelsByPath("./packages/FreeKill_DIY/pkg/yi/skills")
 
 Fk:loadTranslationTable{
   ["yi"] = "异包",
@@ -103,6 +103,15 @@ Fk:loadTranslationTable{
   ["designer:yi__zhenji"] = "KidUnion",
 
   ["~yi__zhenji"] = "悼良会之永绝兮，哀一逝而异乡。",
+}
+
+General:new(extension, "yi__zhouyu", "wu", 3):addSkills { "yi__luoshen", "yi__qingguo" }
+Fk:loadTranslationTable{
+  ["yi__zhouyu"] = "异周瑜",
+  ["#yi__zhouyu"] = "雄姿英发",
+  ["designer:yi__zhouyu"] = "KidUnion",
+
+  ["~yi__zhouyu"] = "既生瑜，何生……",
 }
 
 return extension

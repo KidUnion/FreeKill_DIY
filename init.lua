@@ -1,5 +1,7 @@
-local suzhi = require "packages.DIY.pkg.suzhi"
-local yi = require "packages.DIY.pkg.yi"
+local suzhi = require "packages.FreeKill_DIY.pkg.suzhi"
+local yi = require "packages.FreeKill_DIY.pkg.yi"
+
+Fk:loadTranslationTable{ ["FreeKill_DIY"] = "DIY" }
 
 return {
   suzhi,
