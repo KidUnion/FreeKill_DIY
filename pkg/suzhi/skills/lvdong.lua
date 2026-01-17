@@ -1,120 +1,74 @@
-local fanjian = fk.CreateSkill {
-  name = "yi__fanjian",
+local lvdong = fk.CreateSkill {
+  name = "lvdong",
 }
 
 Fk:loadTranslationTable{
-  ["yi__fanjian"] = "反间",
-  [":yi__fanjian"] = "出牌阶段限一次，你可明置一名其他角色半数（向上取整且至多为5）手牌并明置一种花色的手牌，"..
-  "直至你下回合开始，其使用明置牌后你可获得之，下次使用此花色的牌后失去一点体力。",
-  ["#yi__fanjian"] = "反间：明置一名角色半数手牌并明置一种花色的手牌",
-  ["@@yi__fanjian"] = "反间",
-  ["@yi__fanjian_suits"] = "反间",
-  ["@@visible"] = "明置",
-  ["#yi__fanjian-suit"] = "反间：明置一种花色的手牌",
-  
-  ["$yi__fanjian1"] = "挣扎吧，在血和暗的深渊里！",
-  ["$yi__fanjian2"] = "痛苦吧，在仇与恨的地狱中！",
+  ["lvdong"] = "律动",
+  [":lvdong"] = "锁定技，你的回合内，当有角色使用与上一张被使用的有色牌颜色不同的牌时，其摸一张牌，然后你弃置其一张牌。",
+  ["#lvdong-discard"] = "律动：你须弃置%dest一张牌",
+
+  ["$lvdong"] = "律动",
+  ["@lvdong-turn"] = "律动",
 }
 
-fanjian:addEffect("active", {
-  anim_type = "offensive",
-  prompt = "#yi__fanjian",
-  card_num = 0,
-  target_num = 1,
-  can_use = function(self, player)
-    return player:hasSkill(fanjian.name) and player:usedSkillTimes(fanjian.name, Player.HistoryPhase) == 0
-  end,
-  card_filter = Util.FalseFunc,
-  target_filter = function(self, player, to_select, selected, selected_cards)
-    return #selected == 0 and to_select ~= player and not to_select:isNude()
-  end,
-  on_use = function(self, room, effect)
-    local player = effect.from
-    local target = effect.tos[1]
-    local card_num = math.min(math.ceil(target:getHandcardNum() / 2), 5)
-    local cards = room:askToChooseCards(player, {
-      skill_name = fanjian.name,
-      target = target,
-      min = card_num,
-      max = card_num,
-      flag = "h",
-    })
-    for _, id in ipairs(cards) do
-      room:setCardMark(Fk:getCardById(id), "@@visible", 1)
-    end
-    target:showCards(cards)
-    if target.dead then return end
-    room:addPlayerMark(target, "@@yi__fanjian", 1)
-    local cards_bysuit = {["log_spade"] = {}, ["log_heart"] = {}, ["log_club"] = {}, ["log_diamond"] = {}}
-    for _, id in ipairs(player:getCardIds("h")) do
-      local card = Fk:getCardById(id)
-      table.insert(cards_bysuit[card:getSuitString(true)], card)
-    end
-    local suits = table.filter({"log_spade", "log_heart", "log_club", "log_diamond"}, function(suit)
-      return #cards_bysuit[suit] > 0
-    end)
-    local choice = room:askToChoice(player, {
-      choices = suits,
-      skill_name = fanjian.name,
-      prompt = "#yi__fanjian-suit",
-    })
-    for _, card in ipairs(cards_bysuit[choice]) do
-      room:setCardMark(card, "@@visible", 1)
-    end
-    player:showCards(cards_bysuit[choice])
-    room:addTableMarkIfNeed(target, "@yi__fanjian_suits", choice)
-  end,
-})
-
-fanjian:addEffect(fk.CardUseFinished, {
-  anim_type = "special",
+lvdong:addEffect(fk.CardUsing, {
+  anim_type = "drawcard",
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(fanjian.name) and target:getMark("@@yi__fanjian") > 0 and (data.card:getMark("@@visible") > 0 
-      or table.contains(target:getTableMark("@yi__fanjian_suits"), data.card:getSuitString(true)))
+    return player:hasSkill(lvdong.name) and (data.extra_data or {}).can_lvdong
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    target:drawCards(1, lvdong.name)
+    local card = room:askToChooseCard(player, {
+        target = target,
+        flag = "he",
+        skill_name = lvdong.name,
+        prompt = "#lvdong-discard::"..target.id,
+        cancelable = true,
+    })
+    if not card then return end
+    room:throwCard({card}, lvdong.name, target, player)
+  end,
+
+  refresh_events = {fk.CardUsing, fk.TurnStart},
+  can_refresh = function(self, event, target, player, data)
+    return player.phase ~= Player.NotActive and player:hasSkill(lvdong.name, true)
+  end,
+  on_refresh = function(self, event, target, player, data)
+    local room = player.room
+    local mark = player:getMark("@lvdong-turn")
+    if mark ~= 0 and mark ~= data.card:getColorString() then
+      data.extra_data = data.extra_data or {}
+      data.extra_data.can_lvdong = true
+    end
+    room:setPlayerMark(player, "@lvdong-turn", data.card:getColorString())
+  end,
+  })
+  
+lvdong:addEffect(fk.TurnStart, {
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(lvdong.name, true)
   end,
   on_trigger = function(self, event, target, player, data)
     local room = player.room
-    if table.contains(target:getTableMark("@yi__fanjian_suits"), data.card:getSuitString(true)) then
-      room:setPlayerMark(target, "@yi__fanjian_suits", 0)
-      room:loseHp(target, 1, fanjian.name)
-    end
-    if data.card:getMark("@@visible") > 0 then
-      room:setCardMark(data.card, "@@visible", 0)
-      room:obtainCard(player, data.card, true, fk.ReasonJustMove, player, fanjian.name)
-    end
-  end,
-})
-
-fanjian:addEffect(fk.AfterCardsMove, {
-  mute = true,
-  can_trigger = function(self, event, target, player, data)
-    if player.dead then return false end
-    for _, move in ipairs(data) do
-      if move.to == player then
-        for _, info in ipairs(move.moveInfo) do
-          player.room:setCardMark(Fk:getCardById(info.cardId), "@@visible", 0)
-        end
+    local color = ""
+    room.logic:getEventsByRule(GameEvent.UseCard, 1, function(e)
+      local use = e.data
+      color = use.card:getColorString()
+      if color ~= "" then
+        return true
       end
-      return false
+    end, Player.HistoryGame)
+    if color ~= "" then
+      room:setPlayerMark(player, "@lvdong-turn", color)
+    else
+      room:setPlayerMark(player, "@lvdong-turn", 0)
     end
   end,
 })
 
-fanjian:addEffect(fk.TurnStart, {
-  mute = true,
-  can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(fanjian.name)
-  end,
-  on_trigger = function(self, event, target, player, data)
-    local room = player.room
-    for _, p in ipairs(room.alive_players) do
-      room:setPlayerMark(p, "@@yi__fanjian", 0)
-      room:setPlayerMark(p, "@yi__fanjian_suits", 0)
-    end
-  end,
-})
-
-return fanjian
+return lvdong
 
 -- local dangxian = fk.CreateSkill {
 --   name = "ty_ex__dangxian",
@@ -182,9 +136,9 @@ return fanjian
 
 -- return dangxian
 
--- local fanjian = fk.CreateActiveSkill{
---   name = "fanjian",
---   prompt = "#fanjian-active",
+-- local lvdong = fk.CreateActiveSkill{
+--   name = "lvdong",
+--   prompt = "#lvdong-active",
 --   anim_type = "drawcard",
 --   can_use = function(self, player)
 --     return player:hasSkill(self) and player:usedSkillTimes(self.name, Player.HistoryRound) == 0 
@@ -195,7 +149,7 @@ return fanjian
 --     local player = room:getPlayerById(effect.from)
 --     local show_cards = player:getCardIds(Player.Hand)
 --     player:showCards(show_cards)
---     room:addPlayerMark(player, "fanjian-turn", 1)
+--     room:addPlayerMark(player, "lvdong-turn", 1)
 --     local cards_suits = {}
 --     for _, id in ipairs(show_cards) do
 --       local card = Fk:getCardById(id)
@@ -220,21 +174,21 @@ return fanjian
 --     end
 --   end,
 -- }
--- local fanjian_targetmod = fk.CreateTargetModSkill{
---   name = "#fanjian_targetmod",
+-- local lvdong_targetmod = fk.CreateTargetModSkill{
+--   name = "#lvdong_targetmod",
 --   bypass_times = function(self, player, skill, scope, card)
---     return card and player:hasSkill(fanjian) and player:getMark("fanjian-turn") > 0
+--     return card and player:hasSkill(lvdong) and player:getMark("lvdong-turn") > 0
 --   end,
 --   bypass_distances = function(self, player, skill, card)
---     return card and player:hasSkill(fanjian) and player:getMark("fanjian-turn") > 0
+--     return card and player:hasSkill(lvdong) and player:getMark("lvdong-turn") > 0
 --   end,
 -- }
--- local fanjian_trigger = fk.CreateTriggerSkill{
---   name = "#fanjian_trigger",
+-- local lvdong_trigger = fk.CreateTriggerSkill{
+--   name = "#lvdong_trigger",
 --   mute = true,
 --   events = {fk.AfterCardUseDeclared},
 --   can_trigger = function(self, event, target, player, data)
---     return player == target and player:hasSkill(fanjian) and player:getMark("fanjian-turn") > 0
+--     return player == target and player:hasSkill(lvdong) and player:getMark("lvdong-turn") > 0
 --   end,
 --   on_cost = Util.TrueFunc,
 --   on_use = function(self, event, target, player, data)
@@ -251,12 +205,12 @@ return fanjian
 --         card.id = data.card.id
 --       end
 --       card.skillNames = data.card.skillNames
---       card.skillName = "fanjian"
+--       card.skillName = "lvdong"
 --       card.suit = Card.NoSuit
 --       card.color = Card.NoColor
 --       data.card = card
 --     end
 --     local room = player.room
---     room:setPlayerMark(player, "fanjian-turn", 0)
+--     room:setPlayerMark(player, "lvdong-turn", 0)
 --   end,
 -- }

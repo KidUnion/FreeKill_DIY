@@ -1,120 +1,119 @@
-local fanjian = fk.CreateSkill {
-  name = "yi__fanjian",
+local wumian = fk.CreateSkill {
+  name = "wumian",
 }
 
 Fk:loadTranslationTable{
-  ["yi__fanjian"] = "反间",
-  [":yi__fanjian"] = "出牌阶段限一次，你可明置一名其他角色半数（向上取整且至多为5）手牌并明置一种花色的手牌，"..
-  "直至你下回合开始，其使用明置牌后你可获得之，下次使用此花色的牌后失去一点体力。",
-  ["#yi__fanjian"] = "反间：明置一名角色半数手牌并明置一种花色的手牌",
-  ["@@yi__fanjian"] = "反间",
-  ["@yi__fanjian_suits"] = "反间",
-  ["@@visible"] = "明置",
-  ["#yi__fanjian-suit"] = "反间：明置一种花色的手牌",
-  
-  ["$yi__fanjian1"] = "挣扎吧，在血和暗的深渊里！",
-  ["$yi__fanjian2"] = "痛苦吧，在仇与恨的地狱中！",
+  ["wumian"] = "无眠",
+  [":wumian"] = "每阶段每项限一次，当你的牌被弃置时，若其中包含："..
+  "基本牌：你可视为使用一张不计次数的【杀】；"..
+  "锦囊牌：你可移动场上一张牌并摸一张牌；"..
+  "装备牌：你本回合下个阶段改为出牌阶段；",
+  ["#wumian_basic"] = "视为使用【杀】",
+  ["#wumian_trick"] = "移动牌并摸牌",
+  ["#wumian_equip"] = "下阶段改为出牌阶段",
+  ["#wumian-choose"] = "无眠：你可选择一项",
+  ["#wumian_slash"] = "无眠：你可视为使用一张不计次数的【杀】",
+  ["#wumian_move-choose"] = "无眠：你可移动场上一张牌并摸一张牌",
+
+  ["$wumian"] = "无眠",
+  ["wumian_types-phase"] = "无眠",
+  ["@@wumian_extraplay-turn"] = "下阶段改出牌",
 }
 
-fanjian:addEffect("active", {
+wumian:addEffect(fk.AfterCardsMove, {
   anim_type = "offensive",
-  prompt = "#yi__fanjian",
-  card_num = 0,
-  target_num = 1,
-  can_use = function(self, player)
-    return player:hasSkill(fanjian.name) and player:usedSkillTimes(fanjian.name, Player.HistoryPhase) == 0
-  end,
-  card_filter = Util.FalseFunc,
-  target_filter = function(self, player, to_select, selected, selected_cards)
-    return #selected == 0 and to_select ~= player and not to_select:isNude()
-  end,
-  on_use = function(self, room, effect)
-    local player = effect.from
-    local target = effect.tos[1]
-    local card_num = math.min(math.ceil(target:getHandcardNum() / 2), 5)
-    local cards = room:askToChooseCards(player, {
-      skill_name = fanjian.name,
-      target = target,
-      min = card_num,
-      max = card_num,
-      flag = "h",
-    })
-    for _, id in ipairs(cards) do
-      room:setCardMark(Fk:getCardById(id), "@@visible", 1)
-    end
-    target:showCards(cards)
-    if target.dead then return end
-    room:addPlayerMark(target, "@@yi__fanjian", 1)
-    local cards_bysuit = {["log_spade"] = {}, ["log_heart"] = {}, ["log_club"] = {}, ["log_diamond"] = {}}
-    for _, id in ipairs(player:getCardIds("h")) do
-      local card = Fk:getCardById(id)
-      table.insert(cards_bysuit[card:getSuitString(true)], card)
-    end
-    local suits = table.filter({"log_spade", "log_heart", "log_club", "log_diamond"}, function(suit)
-      return #cards_bysuit[suit] > 0
-    end)
-    local choice = room:askToChoice(player, {
-      choices = suits,
-      skill_name = fanjian.name,
-      prompt = "#yi__fanjian-suit",
-    })
-    for _, card in ipairs(cards_bysuit[choice]) do
-      room:setCardMark(card, "@@visible", 1)
-    end
-    player:showCards(cards_bysuit[choice])
-    room:addTableMarkIfNeed(target, "@yi__fanjian_suits", choice)
-  end,
-})
-
-fanjian:addEffect(fk.CardUseFinished, {
-  anim_type = "special",
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(fanjian.name) and target:getMark("@@yi__fanjian") > 0 and (data.card:getMark("@@visible") > 0 
-      or table.contains(target:getTableMark("@yi__fanjian_suits"), data.card:getSuitString(true)))
-  end,
-  on_trigger = function(self, event, target, player, data)
-    local room = player.room
-    if table.contains(target:getTableMark("@yi__fanjian_suits"), data.card:getSuitString(true)) then
-      room:setPlayerMark(target, "@yi__fanjian_suits", 0)
-      room:loseHp(target, 1, fanjian.name)
-    end
-    if data.card:getMark("@@visible") > 0 then
-      room:setCardMark(data.card, "@@visible", 0)
-      room:obtainCard(player, data.card, true, fk.ReasonJustMove, player, fanjian.name)
-    end
-  end,
-})
-
-fanjian:addEffect(fk.AfterCardsMove, {
-  mute = true,
-  can_trigger = function(self, event, target, player, data)
-    if player.dead then return false end
+    if not  player:hasSkill(wumian.name) then return end
+    local cost_data = {}
     for _, move in ipairs(data) do
-      if move.to == player then
+      if move.from == player and move.moveReason == fk.ReasonDiscard then
         for _, info in ipairs(move.moveInfo) do
-          player.room:setCardMark(Fk:getCardById(info.cardId), "@@visible", 0)
+          if (info.fromArea == Card.PlayerEquip or info.fromArea == Card.PlayerHand) and 
+          not table.contains(player:getTableMark("wumian_types-phase"), Fk:getCardById(info.cardId).type) then
+            table.insertIfNeed(cost_data, Fk:getCardById(info.cardId).type)
+          end
         end
       end
-      return false
+    end
+    if #cost_data > 0 then
+      event:setCostData(self, { types = cost_data })
+      return true
+    end
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local choices = {}
+    local types = event:getCostData(self).types
+    for _, type in ipairs(types) do
+      if type == Card.TypeBasic then
+        table.insert(choices, "#wumian_basic")
+      elseif type == Card.TypeTrick then
+        table.insert(choices, "#wumian_trick")
+      elseif type == Card.TypeEquip then
+        table.insert(choices, "#wumian_equip")
+      end
+    end
+    if #choices > 0 then
+      local choice = room:askToChoice(player, {
+        choices = choices,
+        skill_name = wumian.name,
+        all_choices = {"#wumian_basic", "#wumian_trick", "#wumian_equip"},
+        prompt = "#wumian-choose",
+      })
+      if choice == "#wumian_basic" then
+        local use = room:askToUseVirtualCard(player, {
+          name = "slash",
+          skill_name = wumian.name,
+          prompt = "#wumian_slash",
+        })
+        if not use then return end
+        room:addTableMark(player, "wumian_types-phase", Card.TypeBasic)
+      elseif choice == "#wumian_trick" then
+        local targets = room:askToChooseToMoveCardInBoard(player, {
+          prompt = "#wumian_move-choose",
+          skill_name = wumian.name,
+          no_indicate = true,
+          flag = "ej",
+        })
+        if #targets == 0 then return end
+        room:askToMoveCardInBoard(player, {
+          target_one = targets[1],
+          target_two = targets[2],
+          skill_name = wumian.name,
+        })
+        player:drawCards(1, wumian.name)
+        room:addTableMark(player, "wumian_types-phase", Card.TypeTrick)
+      elseif choice == "#wumian_equip" then
+        room:setPlayerMark(player, "@@wumian_extraplay-turn", 1)
+        room:addTableMark(player, "wumian_types-phase", Card.TypeEquip)
+      end
     end
   end,
 })
 
-fanjian:addEffect(fk.TurnStart, {
+wumian:addEffect(fk.EventPhaseChanging, {
   mute = true,
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(fanjian.name)
+    return target == player and data.phase > Player.RoundStart and data.phase < Player.NotActive 
+      and player:getMark("@@wumian_extraplay-turn") > 0
   end,
-  on_trigger = function(self, event, target, player, data)
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
     local room = player.room
-    for _, p in ipairs(room.alive_players) do
-      room:setPlayerMark(p, "@@yi__fanjian", 0)
-      room:setPlayerMark(p, "@yi__fanjian_suits", 0)
-    end
+    room:sendLog{
+      type = "#PhaseChanged",
+      from = player.id,
+      arg = Util.PhaseStrMapper(data.phase),
+      arg2 = "phase_play",
+    }
+    data.phase = Player.Play
+    room:setPlayerMark(player, "@@wumian_extraplay-turn", 0)
   end,
 })
 
-return fanjian
+return wumian
+
 
 -- local dangxian = fk.CreateSkill {
 --   name = "ty_ex__dangxian",
@@ -182,9 +181,9 @@ return fanjian
 
 -- return dangxian
 
--- local fanjian = fk.CreateActiveSkill{
---   name = "fanjian",
---   prompt = "#fanjian-active",
+-- local wumian = fk.CreateActiveSkill{
+--   name = "wumian",
+--   prompt = "#wumian-active",
 --   anim_type = "drawcard",
 --   can_use = function(self, player)
 --     return player:hasSkill(self) and player:usedSkillTimes(self.name, Player.HistoryRound) == 0 
@@ -195,7 +194,7 @@ return fanjian
 --     local player = room:getPlayerById(effect.from)
 --     local show_cards = player:getCardIds(Player.Hand)
 --     player:showCards(show_cards)
---     room:addPlayerMark(player, "fanjian-turn", 1)
+--     room:addPlayerMark(player, "wumian-turn", 1)
 --     local cards_suits = {}
 --     for _, id in ipairs(show_cards) do
 --       local card = Fk:getCardById(id)
@@ -220,21 +219,21 @@ return fanjian
 --     end
 --   end,
 -- }
--- local fanjian_targetmod = fk.CreateTargetModSkill{
---   name = "#fanjian_targetmod",
+-- local wumian_targetmod = fk.CreateTargetModSkill{
+--   name = "#wumian_targetmod",
 --   bypass_times = function(self, player, skill, scope, card)
---     return card and player:hasSkill(fanjian) and player:getMark("fanjian-turn") > 0
+--     return card and player:hasSkill(wumian) and player:getMark("wumian-turn") > 0
 --   end,
 --   bypass_distances = function(self, player, skill, card)
---     return card and player:hasSkill(fanjian) and player:getMark("fanjian-turn") > 0
+--     return card and player:hasSkill(wumian) and player:getMark("wumian-turn") > 0
 --   end,
 -- }
--- local fanjian_trigger = fk.CreateTriggerSkill{
---   name = "#fanjian_trigger",
+-- local wumian_trigger = fk.CreateTriggerSkill{
+--   name = "#wumian_trigger",
 --   mute = true,
 --   events = {fk.AfterCardUseDeclared},
 --   can_trigger = function(self, event, target, player, data)
---     return player == target and player:hasSkill(fanjian) and player:getMark("fanjian-turn") > 0
+--     return player == target and player:hasSkill(wumian) and player:getMark("wumian-turn") > 0
 --   end,
 --   on_cost = Util.TrueFunc,
 --   on_use = function(self, event, target, player, data)
@@ -251,12 +250,12 @@ return fanjian
 --         card.id = data.card.id
 --       end
 --       card.skillNames = data.card.skillNames
---       card.skillName = "fanjian"
+--       card.skillName = "wumian"
 --       card.suit = Card.NoSuit
 --       card.color = Card.NoColor
 --       data.card = card
 --     end
 --     local room = player.room
---     room:setPlayerMark(player, "fanjian-turn", 0)
+--     room:setPlayerMark(player, "wumian-turn", 0)
 --   end,
 -- }

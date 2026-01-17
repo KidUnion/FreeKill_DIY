@@ -52,22 +52,25 @@ zhaxiang:addEffect(fk.PreCardUse, {
 zhaxiang:addEffect(fk.AfterCardsMove, {
   mute = true,
   can_trigger = function(self, event, target, player, data)
-    if player.dead or not player:hasSkill(zhaxiang.name) then return false end
+    if player.dead then return false end
     local suits = player:getTableMark("@yi__zhaxiang-round")
-    if #suits == 4 then return false end
     local suit, can_use = nil, false
     for _, move in ipairs(data) do
-      if move.from == player then
+      if move.from == player and player:hasSkill(zhaxiang.name) then
         for _, info in ipairs(move.moveInfo) do
           local card = Fk:getCardById(info.cardId)
           suit = card:getSuitString(true)
           if card:getMark("@@visible") > 0 or info.fromArea == Card.PlayerEquip then
-            card:setMark("@@visible", 0)
             if not table.contains(suits, suit) and suit ~= Card.NoSuit then
               player.room:addTableMark(player, "@yi__zhaxiang-round", suit)
               can_use = true
             end
           end
+        end
+      end
+      if move.to == player then
+        for _, info in ipairs(move.moveInfo) do
+          player.room:setCardMark(Fk:getCardById(info.cardId), "@@visible", 0)
         end
       end
       return can_use

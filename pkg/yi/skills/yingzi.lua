@@ -4,15 +4,97 @@ local yingzi = fk.CreateSkill {
 
 Fk:loadTranslationTable{
   ["yi__yingzi"] = "英姿",
-  [":yi__yingzi"] = "摸牌阶段开始时，你可选择一项：\r\n"..
-  "1、选择并获得一张你未明置的类型的牌； 2、摸X张牌（X为你明置牌的类型数）。 \r\n"..
-  "你明置的手牌不计入手牌上限。",
+  [":yi__yingzi"] = "摸牌阶段开始时，你可摸X张牌或获得一张你未明置的类型（由你指定）的牌；\r\n"..
+  "你的手牌上限+X。（X为你明置牌的类型数）",
+  ["@@visible"] = "明置",
+  ["#yi__yingzi-choice"] = "英姿：你可选择一项",
+  ["#yi__yingzi_basic"] = "获得一张基本牌",
+  ["#yi__yingzi_equip"] = "获得一张装备牌",
+  ["#yi__yingzi_trick"] = "获得一张锦囊牌",
+  ["#yi__yingzi_draw"] = "摸%arg张牌",
 
   ["$yi__yingzi1"] = "交之总角，付之九州！",
   ["$yi__yingzi2"] = "定策分两治，纵马饮三江！",
 }
 
+yingzi:addEffect(fk.EventPhaseStart, {
+  anim_type = "drawcard",
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(yingzi.name) and player.phase == Player.Draw
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    local types = {"basic", "equip", "trick"}
+    for _, id in ipairs(player:getCardIds("h")) do
+      local card = Fk:getCardById(id)
+      if card:getMark("@@visible") > 0 and table.contains(types, card:getTypeString()) then
+        table.removeOne(types, card:getTypeString())
+      end
+    end
+    if #player:getCardIds("e") > 0 and table.contains(types, "equip") then
+      table.removeOne(types, "equip")
+    end
+    
+    local choices = {}
+    for _, t in ipairs(types) do
+      table.insert(choices, "#yi__yingzi_" .. t)
+    end
+    if #types < 3 then
+      table.insert(choices, "#yi__yingzi_draw:::" .. (3 - #types))
+    end
+    local choice = room:askToChoice(player, {
+      choices = choices,
+      skill_name = yingzi.name,
+      prompt = "#yi__yingzi-choice",
+      cancelable = true,
+    })
+    if not choice then return false end
+    event:setCostData(self, { choice = choice })
+    return true
+  end,
+  on_use = function(self, event, target, player, data)
+    local choice = event:getCostData(self).choice
+    local room = player.room
+    local cards = {}
+    if choice == "#yi__yingzi_basic" then
+      cards = table.filter(room.draw_pile, function (id)
+        return Fk:getCardById(id).type == Card.TypeBasic 
+      end)
+    elseif choice == "#yi__yingzi_equip" then
+      cards = table.filter(room.draw_pile, function (id)
+        return Fk:getCardById(id).type == Card.TypeEquip 
+      end)
+    elseif choice == "#yi__yingzi_trick" then
+      cards = table.filter(room.draw_pile, function (id)
+        return Fk:getCardById(id).type == Card.TypeTrick 
+      end)
+    else
+      local num = tonumber(string.match(choice, "#yi__yingzi_draw:::(%d+)"))
+      player:drawCards(num, self.name)
+      return
+    end
+    room:obtainCard(player, table.random(cards), false, fk.ReasonJustMove, player, yingzi.name)
+  end,
+})
 
+yingzi:addEffect("maxcards", {
+  mute = true,
+  correct_func = function(self, player)
+    if player:hasSkill(yingzi.name) then
+      local types = {}
+      for _, id in ipairs(player:getCardIds("h")) do
+        local card = Fk:getCardById(id)
+        if card:getMark("@@visible") > 0 then
+          table.insertIfNeed(types, card:getTypeString())
+        end
+      end
+      if #player:getCardIds("e") > 0 then
+        table.insertIfNeed(types, "equip")
+      end
+      return #types
+    end
+  end,
+})
 
 return yingzi
 

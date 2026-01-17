@@ -4,7 +4,7 @@ local tuxi = fk.CreateSkill {
 
 Fk:loadTranslationTable{
   ["yi__tuxi"] = "突袭",
-  [":yi__tuxi"] = "准备阶段，你可分配{}中的数值（总和不超过6）并观看{}名角色各{}张手牌，将其中至多{}张置于牌堆两侧。",
+  [":yi__tuxi"] = "准备阶段，你可分配{}中的数值（总和不超过6）并随机观看{}名角色各{}张手牌，将其中至多{}张置于牌堆两侧。",
 	["#yi__tuxi-choose"] = "突袭：请选择任意名角色，总数剩余 %arg",
 	["yi__tuxi-view"] = "突袭：选择观看这些角色任意张牌，总数剩余 %arg",
 	["#tuxi-prey"] = "突袭：你可选择其中至多 %arg 张牌置于牌堆两侧",
@@ -103,14 +103,14 @@ tuxi:addEffect(fk.EventPhaseStart, {
 			}
 		)
 		local toGain = 6 - #tos - toView
-		local cards = {}
+		local cards = {} -- 储存键值对{player.id, {cardIds}}
 		local card_data = {}
 		for _, p in ipairs(tos) do
 			local handIds = p:getCardIds("h")
 			-- randomly select toView cards from each target
 			if toView > 0 then
 				local viewIds = table.random(handIds, math.min(toView, #handIds))
-				table.insertTable(cards, viewIds)
+				table.insert(cards, {p.id, viewIds})
 				table.insert(card_data, {p.general, viewIds})
 			end
 		end
@@ -126,22 +126,34 @@ tuxi:addEffect(fk.EventPhaseStart, {
         skip = true,
       })
       local top, bottom = result.top, result.bottom
-      room:moveCards({
-        ids = top,
-        toArea = Card.DrawPile,
-        moveReason = fk.ReasonJustMove,
-        skillName = tuxi.name,
-        proposer = player,
-        drawPilePosition = 1,
-      })
-      room:moveCards({
-        ids = bottom,
-        toArea = Card.DrawPile,
-        moveReason = fk.ReasonJustMove,
-        skillName = tuxi.name,
-        proposer = player,
-        drawPilePosition = -1,
-      })
+      for _, id in ipairs(top) do
+        local from = table.filter(cards, function (pair)
+          return table.contains(pair[2], id)
+        end)
+        room:moveCards({
+          ids = {id},
+          from = from[1][1],
+          toArea = Card.DrawPile,
+          moveReason = fk.ReasonPut,
+          skillName = tuxi.name,
+          proposer = player,
+          drawPilePosition = 1,
+        })
+      end
+      for _, id in ipairs(bottom) do
+        local from = table.filter(cards, function (pair)
+          return table.contains(pair[2], id)
+        end)
+        room:moveCards({
+          ids = {id},
+          from = from[1][1],
+          toArea = Card.DrawPile,
+          moveReason = fk.ReasonPut,
+          skillName = tuxi.name,
+          proposer = player,
+          drawPilePosition = -1,
+        })
+      end
 		end
   end,
 })

@@ -1,59 +1,54 @@
-local qingguo = fk.CreateSkill {
-  name = "yi__qingguo",
-  -- frequency = Skill.Compulsory,
+local wangyue = fk.CreateSkill {
+  name = "suzhi__wangyue",
 }
 
 Fk:loadTranslationTable{
-  ["yi__qingguo"] = "倾国",
-  [":yi__qingguo"] = "锁定技，当你或你攻击范围内的角色失去【闪】时，你从牌堆中获得一张黑色牌，此牌不计次数与手牌上限。",
-  ["@@yi__qingguo-inhand"] = "倾国",
-
-  ["$yi__qingguo1"] = "髣髴兮若轻云之蔽月。",
-  ["$yi__qingguo2"] = "飘飖兮若流风之回雪。",
+  ["suzhi__wangyue"] = "望岳",
+  [":suzhi__wangyue"] = "出牌阶段限一次，你可与一名手牌数不大于你的角色交换手牌，然后摸两张牌并将手牌弃至与其相同，本回合你与其距离视为一。",
+  ["#suzhi__wangyue-active"] = "发动〖望岳〗，与一名手牌数不大于你的角色交换手牌",
+  ["#suzhi__wangyue-discard"] = "望岳：你须将手牌弃至与其相同",
+  
+  ["$suzhi__wangyue"] = "望岳",
+  ["@@suzhi__wangyue-turn"] = "望岳",
 }
 
-qingguo:addEffect(fk.AfterCardsMove, {
-  anim_type = "drawcard",
-  can_trigger = function(self, event, target, player, data)
-    if player:hasSkill(qingguo.name) then
-      for _, move in ipairs(data) do
-        if move.from and (player:inMyAttackRange(move.from) or move.from == player) then
-          for _, info in ipairs(move.moveInfo) do
-            if (info.fromArea == Player.Hand or info.fromArea == Player.Equip) and Fk:getCardById(info.cardId).name == "jink" then
-              return true
-            end
-          end
-        end
-      end
-    end
-  end,
-  on_cost = Util.TrueFunc,
-  on_use = function(self, event, target, player, data)
-    local room = player.room
-    local cards = room:getCardsFromPileByRule(".|.|spade,club")
-    if #cards > 0 then
-      room:obtainCard(player, cards, true, fk.ReasonJustMove, player, qingguo.name)
-    end
-  end
-})
+-- local wangyue = fk.CreateActiveSkill{
+--   name = "suzhi__wangyue",
+--   anim_type = "control",
+--   target_num = 1,
+--   prompt = "#suzhi_wangyue-active",
+--   can_use = function(self, player)
+--     return player:hasSkill(self) and player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
+--   end,
+--   card_filter = Util.FalseFunc,
+--   target_filter = function(self, to_select, selected)
+--     local target = Fk:currentRoom():getPlayerById(to_select)
+--     return Self.id ~= to_select and #selected == 0 and target:getHandcardNum() <= Self:getHandcardNum() 
+--   end,
+--   on_use = function(self, room, effect)
+--     local player = room:getPlayerById(effect.from)
+--     local target = room:getPlayerById(effect.tos[1])
+--     U.swapCards(room, player, player, target, player:getCardIds("h"), target:getCardIds("h"), self.name)
+--     if not player.dead then
+--       room:drawCards(player, 2, self.name)
+--       room:setPlayerMark(target, "@@suzhi_wangyue-turn", player.id)
+--       local num = player:getHandcardNum() - target:getHandcardNum()
+--       if num > 0 then
+--         room:askForDiscard(player, num, num, false, self.name, false, nil, "#suzhi_wangyue-discard")
+--       end
+--     end
+--   end,
+-- }
+-- local wangyue_distance = fk.CreateDistanceSkill{
+--   name = "#suzhi_wangyue_distance",
+--   fixed_func = function(self, from, to)
+--     if from:hasSkill(wangyue) and to:getMark("@@suzhi_wangyue-turn") == from.id then
+--       return 1
+--     end
+--   end,
+-- }
 
-qingguo:addEffect("maxcards", {
-  exclude_from = function(self, player, card)
-    return card:getMark("@@yi__qingguo-inhand") > 0 and player:hasSkill(qingguo.name)
-  end,
-})
-
-qingguo:addEffect(fk.PreCardUse, {
-  mute = true,
-  can_refresh = function (self, event, target, player, data)
-    return target == player and data.card:getMark("@@yi__qingguo-inhand") > 0
-  end,
-  on_refresh = function (self, event, target, player, data)
-    data.extraUse = true
-  end,
-})
-
-return qingguo
+return wangyue
 
 -- local dangxian = fk.CreateSkill {
 --   name = "ty_ex__dangxian",
@@ -121,18 +116,18 @@ return qingguo
 
 -- return dangxian
 
--- local qingguo = fk.CreateTriggerSkill{
---   name = "qingguo",
+-- local wangyue = fk.CreateTriggerSkill{
+--   name = "wangyue",
 --   mute = true,
 --   events = {},
 
 --   refresh_events = {fk.CardUsing},
 --   can_refresh = function (self, event, target, player, data)
 --     return player == target and player:hasSkill(self, true) and data.card.suit ~= Card.NoSuit
---     and not table.contains(player:getTableMark("@qingguo-turn"), data.card:getSuitString(true))
+--     and not table.contains(player:getTableMark("@wangyue-turn"), data.card:getSuitString(true))
 --   end,
 --   on_refresh = function (self, event, target, player, data)
---     player.room:addTableMark(player, "@qingguo-turn", data.card:getSuitString(true))
+--     player.room:addTableMark(player, "@wangyue-turn", data.card:getSuitString(true))
 --   end,
 
 --   on_acquire = function (self, player, is_start)
@@ -145,14 +140,14 @@ return qingguo
 --         table.insertIfNeed(mark, use.card:getSuitString(true))
 --       end
 --     end, Player.HistoryTurn)
---     room:setPlayerMark(player, "@qingguo-turn", #mark > 0 and mark or 0)
+--     room:setPlayerMark(player, "@wangyue-turn", #mark > 0 and mark or 0)
 --   end,
 -- }
--- local qingguo_maxcards = fk.CreateMaxCardsSkill{
---   name = "#qingguo_maxcards",
+-- local wangyue_maxcards = fk.CreateMaxCardsSkill{
+--   name = "#wangyue_maxcards",
 --   fixed_func = function(self, player)
---     if player:hasSkill(qingguo) then
---       return (5 - #player:getTableMark("@qingguo-turn"))
+--     if player:hasSkill(wangyue) then
+--       return (5 - #player:getTableMark("@wangyue-turn"))
 --     end
 --   end,
 -- }

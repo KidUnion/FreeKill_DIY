@@ -105,7 +105,7 @@ Fk:loadTranslationTable{
   ["~yi__zhenji"] = "悼良会之永绝兮，哀一逝而异乡。",
 }
 
-General:new(extension, "yi__zhouyu", "wu", 3):addSkills { "yi__luoshen", "yi__qingguo" }
+General:new(extension, "yi__zhouyu", "wu", 3):addSkills { "yi__fanjian", "yi__yingzi" }
 Fk:loadTranslationTable{
   ["yi__zhouyu"] = "异周瑜",
   ["#yi__zhouyu"] = "雄姿英发",
