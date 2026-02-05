@@ -69,6 +69,15 @@ Fk:loadTranslationTable{
 
     ["~lubing"] = "我……我输了……",
   }
+
+  General:new(extension, "niyangyin", "wei", 3):addSkills { "lunzhang", "chengyun" }
+  Fk:loadTranslationTable{
+    ["niyangyin"] = "倪扬英",
+    ["#niyangyin"] = "NaNi",
+    ["designer:niyangyin"] = "KidUnion",
+
+    ["~niyangyin"] = "我……我输了……",
+  }
   
   return extension
 

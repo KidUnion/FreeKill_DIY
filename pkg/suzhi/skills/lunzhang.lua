@@ -1,107 +1,98 @@
 local lunzhang = fk.CreateSkill {
   name = "lunzhang",
-  frequency = Skill.Compulsory,
 }
 
 Fk:loadTranslationTable{
-  ["lunzhang"] = "题海",
-  [":lunzhang"] = "锁定技，当你于回合内使用牌时，若此牌花色未被记录，你记录之；否则你从牌堆中获得一张花色未被记录的牌。 \r\n"..
-  "结束阶段，你亮出牌堆顶等同于记录花色数的牌并可使用其中任意张牌名字数各不相同的牌，然后移除所有记录；若你此阶段未造成过伤害，下次亮出的牌数加一。",
+  ["lunzhang"] = "论章",
+  [":lunzhang"] = "你获得过牌的回合结束时，你可重铸至多等量张牌并可与一名角色拼点，若你赢，你可视为对其使用一张你本回合失去过的牌。",
 
-  ["$lunzhang"] = "题海",
-  ["@lunzhang-turn"] = "题海",
-  ["@@lunzhang-plus"] = "题海+1",
-  ["#lunzhang-use"] = "题海：你可使用其中任意张牌名字数各不相同的牌",
+  ["$lunzhang"] = "论章",
+  ["@lunzhang_obtain-turn"] = "本回合获得牌数",
+  ["lunzhang_lose-turn"] = "论章-可使用",
+  ["#lunzhang-recast"] = "论章：你可重铸至多 %arg 张牌",
+  ["#lunzhang-choose"] = "论章：你可与一名角色拼点，若赢，可视为对其使用一张你本回合失去过的牌",
+  ["#lunzhang-use"] = "论章：你可视为对%dest使用一张牌",
 }
 
-lunzhang:addEffect(fk.EventPhaseStart,{
-  anim_type = "offensive",
+local U = require "packages.utility.utility"
+
+lunzhang:addEffect(fk.AfterCardsMove,{
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(lunzhang.name) and player.phase == Player.Finish
-  end,
-  on_use = function(self, event, target, player, data)
-    local num = #player:getTableMark("@lunzhang-turn") + player:getMark("@@lunzhang-plus")
+    if not player:hasSkill(lunzhang.name, true) then return false end
     local room = player.room
-    room:setPlayerMark(player, "@@lunzhang-plus", 1)
-    if num > 0 then
-      local top_cards = room:getNCards(num)
-      room:moveCardTo(top_cards, Card.Processing)
-      local to_use = {}
-      while not player.dead do
-        to_use = table.filter(top_cards, function (id)
-          local card = Fk:getCardById(id)
-          return room:getCardArea(id) == Card.Processing and player:canUse(card) and not player:prohibitUse(card)
-        end)
-        if #to_use == 0 then break end
-        local use = room:askToUseRealCard(player, {
-          pattern = to_use,
-          skill_name = lunzhang.name,
-          prompt = "#lunzhang-use",
-          extra_data = {
-            bypass_times = true,
-            extraUse = true,
-            expand_pile = to_use,
-          },
-          skip = true,
-        })
-        if use then
-          table.removeOne(top_cards, use.card:getEffectiveId())
-          room:useCard(use)
-          local n = Fk:translate(use.card.trueName, "zh_CN"):len()
-          top_cards = table.filter(top_cards, function (id)
-            local card = Fk:getCardById(id)
-            return room:getCardArea(id) == Card.Processing and Fk:translate(card.trueName, "zh_CN"):len() ~= n
-          end)
-        else
-          break
-        end
+    for _, move in ipairs(data) do
+      local player_lose = false
+      if move.to and move.to == player and move.toArea == Player.Hand then
+        room:addPlayerMark(player, "@lunzhang_obtain-turn", #move.moveInfo)
       end
-      local cardsInProcessing = table.filter(top_cards, function(id) return room:getCardArea(id) == Card.Processing end)
-      if #cardsInProcessing > 0 then
-        room:moveCardTo(cardsInProcessing, Card.DiscardPile)
-      end
-    end
-  end,
-})
-lunzhang:addEffect(fk.CardUsing, {
-  can_trigger = function (self, event, target, player, data)
-    return player == target and player:hasSkill(self, true) and 
-    data.card.suit ~= Card.NoSuit and player.room.current == player
-  end,
-  on_trigger = function (self, event, target, player, data)
-    local record = player:getTableMark("@lunzhang-turn")
-    local room = player.room
-    if table.contains(record, data.card:getSuitString(true)) then
-      local pattern = ".|.|^("
-      local flag = 0
-      local suits = {"spade", "heart", "club", "diamond"}
-      for _, suit in ipairs(suits) do
-        if table.contains(record, "log_"..suit) then
-          if flag == 1 then
-            pattern = pattern..","
-          else
-            flag = 1
+      if move.from and move.from == player then
+        for _, info in ipairs(move.moveInfo) do
+          local card = Fk:getCardById(info.cardId)
+          if card.type ~= Card.TypeEquip and card.sub_type ~= Card.SubtypeDelayedTrick then
+            room:addTableMarkIfNeed(player, "lunzhang_lose-turn", card.name)
           end
-          pattern = pattern..suit
         end
       end
-      local cards = room:getCardsFromPileByRule(pattern..")", 1)
-      if #cards > 0 then
-        room:obtainCard(player, cards[1], false, fk.ReasonJustMove, player.id, self.name)
-      end
-    else 
-      room:addTableMark(player, "@lunzhang-turn", data.card:getSuitString(true))
     end
+    return false
   end,
 })
 
-lunzhang:addEffect(fk.Damage, {
+lunzhang:addEffect(fk.TurnEnd,{
+  anim_type = "special",
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(lunzhang.name) and target == player and player.phase == Player.Finish
+    return player:hasSkill(lunzhang.name) and player:getMark("@lunzhang_obtain-turn") > 0
   end,
-  on_trigger = function(self, event, target, player, data)
-    player.room:setPlayerMark(player, "@@lunzhang-plus", 0)
-  end
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local ids = room:askToCards(player, {
+      min_num = 1,
+      max_num = player:getMark("@lunzhang_obtain-turn"),
+      include_equip = true,
+      skill_name = lunzhang.name,
+      prompt = "#lunzhang-recast:::"..player:getMark("@lunzhang_obtain-turn"),
+      cancelable = true,
+    })
+    if #ids > 0 then
+      room:recastCard(ids, player, lunzhang.name)
+    end
+
+    local targets = table.filter(room.alive_players, function(p)
+      return player:canPindian(p)
+    end)
+    local to = room:askToChoosePlayers(player, {
+      min_num = 1,
+      max_num = 1,
+      targets = targets,
+      skill_name = lunzhang.name,
+      prompt = "#lunzhang-choose",
+      cancelable = true,
+    })
+    if #to == 0 then return end
+    to = to[1]
+    local pindian = player:pindian({to}, lunzhang.name)
+    if pindian.results[to].winner == player then
+      if player.dead or to.dead then return end
+      local card_names = table.filter(player:getTableMark("lunzhang_lose-turn") or {}, function(name)
+        local card = Fk:cloneCard(name)
+        return player:canUseTo(card, to) and not player:prohibitUse(card)
+      end)
+      room:askToUseVirtualCard(player, {
+        name = card_names,
+        skill_name = lunzhang.name,
+        prompt = "#lunzhang-use::"..to.id,
+        cancelable = true,
+        extra_data = {
+          bypass_distances = true,
+          bypass_times = true,
+          extraUse = true,
+          exclusive_targets = {to.id},
+        },
+        skip = false,
+      })
+    end
+  end,
 })
 
 return lunzhang
