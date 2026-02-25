@@ -15,6 +15,7 @@ Fk:loadTranslationTable{
 
 luoshen:addEffect(fk.CardUsing, {
   anim_type = "control",
+  
   can_trigger = function(self, event, target, player, data)
     return player:hasSkill(luoshen.name) and data.card.color == Card.Black
   end,

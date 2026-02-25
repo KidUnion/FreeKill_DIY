@@ -255,7 +255,7 @@ chengyun:addEffect(fk.CardUsing, {
         skill_name = chengyun.name,
         prompt = "#chengyun-prey::"..target.id,
       })
-      if #card > 0 then
+      if card ~= nil then
         room:moveCardTo(card, Card.PlayerHand, player, fk.ReasonPrey, chengyun.name, nil, false, player)
         if not target.dead then
           room:drawCards(target, 1, chengyun.name)
