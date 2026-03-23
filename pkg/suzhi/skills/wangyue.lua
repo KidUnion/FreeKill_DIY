@@ -12,41 +12,47 @@ Fk:loadTranslationTable{
   ["@@suzhi__wangyue-turn"] = "望岳",
 }
 
--- local wangyue = fk.CreateActiveSkill{
---   name = "suzhi__wangyue",
---   anim_type = "control",
---   target_num = 1,
---   prompt = "#suzhi_wangyue-active",
---   can_use = function(self, player)
---     return player:hasSkill(self) and player:usedSkillTimes(self.name, Player.HistoryPhase) == 0
---   end,
---   card_filter = Util.FalseFunc,
---   target_filter = function(self, to_select, selected)
---     local target = Fk:currentRoom():getPlayerById(to_select)
---     return Self.id ~= to_select and #selected == 0 and target:getHandcardNum() <= Self:getHandcardNum() 
---   end,
---   on_use = function(self, room, effect)
---     local player = room:getPlayerById(effect.from)
---     local target = room:getPlayerById(effect.tos[1])
---     U.swapCards(room, player, player, target, player:getCardIds("h"), target:getCardIds("h"), self.name)
---     if not player.dead then
---       room:drawCards(player, 2, self.name)
---       room:setPlayerMark(target, "@@suzhi_wangyue-turn", player.id)
---       local num = player:getHandcardNum() - target:getHandcardNum()
---       if num > 0 then
---         room:askForDiscard(player, num, num, false, self.name, false, nil, "#suzhi_wangyue-discard")
---       end
---     end
---   end,
--- }
--- local wangyue_distance = fk.CreateDistanceSkill{
---   name = "#suzhi_wangyue_distance",
---   fixed_func = function(self, from, to)
---     if from:hasSkill(wangyue) and to:getMark("@@suzhi_wangyue-turn") == from.id then
---       return 1
---     end
---   end,
--- }
+wangyue:addEffect("active", {
+  anim_type = "control",
+  target_num = 1,
+  prompt = "#suzhi__wangyue-active",
+  can_use = function(self, player)
+    return player:hasSkill(wangyue.name) and player:usedSkillTimes(wangyue.name, Player.HistoryPhase) == 0
+  end,
+  card_filter = Util.FalseFunc,
+  target_filter = function(self, player, to_select, selected)
+    return player ~= to_select and #selected == 0 and to_select:getHandcardNum() <= player:getHandcardNum()
+  end,
+  on_use = function(self, room, effect)
+    local player = effect.from
+    local target = effect.tos[1]
+    room:swapAllCards(player, {player, target}, wangyue.name)
+    if not player.dead then
+      room:drawCards(player, 2, self.name)
+      room:setPlayerMark(target, "@@suzhi__wangyue-turn", player.id)
+      local num = player:getHandcardNum() - target:getHandcardNum()
+      if num > 0 then
+        room:askToDiscard(player, {
+        min_num = num,
+        max_num = num,
+        include_equip = false,
+        skill_name = wangyue.name,
+        cancelable = false,
+        prompt = "#suzhi__wangyue-discard",
+        skip = false
+      })
+      end
+    end
+  end,
+})
+
+wangyue:addEffect("distance", {
+  fixed_func = function(self, from, to)
+    if from:hasSkill(wangyue.name) and to:getMark("@@suzhi__wangyue-turn") == from.id then
+      return 1
+    end
+  end,
+})
 
 return wangyue
 

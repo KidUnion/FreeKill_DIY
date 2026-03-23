@@ -78,6 +78,15 @@ Fk:loadTranslationTable{
 
     ["~niyangyin"] = "我……我输了……",
   }
+
+  General:new(extension, "sunzehan", "qun", 4):addSkills { "suzhi__wusheng", "qingxiu" }
+  Fk:loadTranslationTable{
+    ["sunzehan"] = "孙泽涵",
+    ["#sunzehan"] = "亚洲舞王",
+    ["designer:sunzehan"] = "KidUnion",
+  
+    ["~sunzehan"] = "我……我输了……",
+  }
   
   return extension
 

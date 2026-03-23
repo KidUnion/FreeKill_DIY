@@ -4,7 +4,7 @@ local lvdong = fk.CreateSkill {
 
 Fk:loadTranslationTable{
   ["lvdong"] = "律动",
-  [":lvdong"] = "锁定技，你的回合内，当有角色使用与上一张被使用的有色牌颜色不同的牌时，其摸一张牌，然后你弃置其一张牌。",
+  [":lvdong"] = "锁定技，你的回合内，当手牌数不大于你的角色使用与上一张被使用的有色牌颜色不同的非装备牌时，其摸一张牌。",
   ["#lvdong-discard"] = "律动：你须弃置%dest一张牌",
 
   ["$lvdong"] = "律动",
@@ -14,37 +14,28 @@ Fk:loadTranslationTable{
 lvdong:addEffect(fk.CardUsing, {
   anim_type = "drawcard",
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(lvdong.name) and (data.extra_data or {}).can_lvdong
+    return player:hasSkill(lvdong.name) and (data.extra_data or {}).can_lvdong 
+      and target:getHandcardNum() <= player:getHandcardNum()
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
-    local room = player.room
     target:drawCards(1, lvdong.name)
-    local card = room:askToChooseCard(player, {
-        target = target,
-        flag = "he",
-        skill_name = lvdong.name,
-        prompt = "#lvdong-discard::"..target.id,
-        cancelable = true,
-    })
-    if not card then return end
-    room:throwCard({card}, lvdong.name, target, player)
   end,
 
-  refresh_events = {fk.CardUsing, fk.TurnStart},
+  refresh_events = {fk.CardUsing},
   can_refresh = function(self, event, target, player, data)
     return player.phase ~= Player.NotActive and player:hasSkill(lvdong.name, true)
   end,
   on_refresh = function(self, event, target, player, data)
     local room = player.room
     local mark = player:getMark("@lvdong-turn")
-    if mark ~= 0 and mark ~= data.card:getColorString() then
+    if mark ~= 0 and mark ~= data.card:getColorString() and data.card.type ~= Card.TypeEquip then
       data.extra_data = data.extra_data or {}
       data.extra_data.can_lvdong = true
     end
     room:setPlayerMark(player, "@lvdong-turn", data.card:getColorString())
   end,
-  })
+})
   
 lvdong:addEffect(fk.TurnStart, {
   can_trigger = function(self, event, target, player, data)

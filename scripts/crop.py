@@ -39,8 +39,8 @@ def process_images(input_dir, output_dir, target_width=256, target_height=256):
 
 # 示例调用
 if __name__ == "__main__":
-    input_dir = "D:\FreeKill-release\packages\DIY\image\origin"              # 替换为你的源目录
-    output_dir = "D:\FreeKill-release\packages\DIY\image\generals"        # 替换为输出目录
+    input_dir = "D:\FreeKill-release\packages\FreeKill_DIY\image\origin"              # 替换为你的源目录
+    output_dir = "D:\FreeKill-release\packages\FreeKill_DIY\image\generals"        # 替换为输出目录
     target_width = 250                    # 自定义宽度
     target_height = 292                   # 自定义高度
 

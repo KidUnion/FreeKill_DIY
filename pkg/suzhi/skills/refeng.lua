@@ -4,8 +4,8 @@ local refeng = fk.CreateSkill {
 
 Fk:loadTranslationTable{
   ["refeng"] = "热讽",
-  [":refeng"] = "出牌阶段限一次，你可以弃置一张牌（点数记为X）并指定一名其他角色，其弃置任意张牌并移除以下效果中的等量项直至回合结束。"..
-  "本回合你对其使用点数不大于X的牌无距离限制且执行剩余所有选项：1、你摸一张牌；2、此牌对其造成的伤害+1；3、其不能响应此牌；4、此牌不计次数。",
+  [":refeng"] = "出牌阶段限一次，你可选择一名其他角色，弃置一张牌并记录点数，其弃置任意张牌并移除等量项效果直至回合结束。"..
+  "本回合你对其使用点数小于记录的牌时刷新纪录并执行剩余效果：1、你摸一张牌；2、此牌对其造成的伤害+1；3、其不能响应此牌；4、此牌不计次数。",
   ["#refeng_trigger"] = "热讽",
   ["#refeng-active"] = "发动〖热讽〗，弃置一张牌并指定一名其他角色",
   ["#refeng-discard"] = "热讽：你须弃置任意张牌",
@@ -74,22 +74,16 @@ refeng:addEffect("active", {
   end,
 })
 
-refeng:addEffect("targetmod", {
-  bypass_distances = function (self, player, skill, card, to)
-    return to:getMark("@@refeng_target-turn") == player.id and card.number > 0
-    and card.number <= player:getMark("@refeng-turn")
-  end,
-})
-
 refeng:addEffect(fk.TargetSpecified, {
   can_trigger = function(self, event, target, player, data)
     local room = player.room
     local to = data.to
     return target == player and to:getMark("@@refeng_target-turn") == player.id and
-      (data.use.card.number > 0 and data.use.card.number <= player:getMark("@refeng-turn"))
+      (data.use.card.number > 0 and data.use.card.number < player:getMark("@refeng-turn"))
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
+    player.room:setPlayerMark(player, "@refeng-turn", data.use.card.number)
     if player:getMark("@@refeng1-turn") > 0 then
       player:drawCards(1, self.name)
     end

@@ -5,7 +5,7 @@ local chengyun = fk.CreateSkill {
 
 Fk:loadTranslationTable{
   ["chengyun"] = "成韵",
-  [":chengyun"] = "转换技，锁定技，当有角色于其回合内使用与上一张牌押韵的牌时，阴/阳：你交给/获得其一张牌，你/其摸一张牌。",
+  [":chengyun"] = "转换技，锁定技，当有角色于其回合内使用与上一张牌押韵的牌时，阴/阳：你交给/获得其一张手牌，你/其摸一张牌。",
   ["#chengyun-give"] = "成韵：你可交给 %dest 一张牌",
   ["#chengyun-prey"] = "成韵：你可获得 %dest 一张牌",
 
@@ -237,7 +237,7 @@ chengyun:addEffect(fk.CardUsing, {
       local card = room:askToCards(player, {
         min_num = 1,
         max_num = 1,
-        include_equip = true,
+        include_equip = false,
         skill_name = chengyun.name,
         prompt = "#chengyun-give::"..target.id,
         cancelable = false,
@@ -251,7 +251,7 @@ chengyun:addEffect(fk.CardUsing, {
     else
       local card = room:askToChooseCard(player, {
         target = target,
-        flag = "he",
+        flag = "h",
         skill_name = chengyun.name,
         prompt = "#chengyun-prey::"..target.id,
       })

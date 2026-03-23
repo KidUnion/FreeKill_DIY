@@ -4,14 +4,14 @@ local lunzhang = fk.CreateSkill {
 
 Fk:loadTranslationTable{
   ["lunzhang"] = "论章",
-  [":lunzhang"] = "你获得过牌的回合结束时，你可重铸至多等量张牌并可与一名角色拼点，若你赢，你可视为对其使用一张你本回合失去过的牌。",
+  [":lunzhang"] = "你获得过牌的回合结束时，你可重铸至多等量张牌并可与一名角色拼点，若你赢，你可视为对其使用一张你本回合失去过的牌，否则你获得其拼点牌。",
+  ["#lunzhang-recast"] = "论章：你可重铸至多 %arg 张牌",
+  ["#lunzhang-choose"] = "论章：你可与一名角色拼点，若赢，可视为对其使用一张你本回合失去过的牌",
+  ["#lunzhang-use"] = "论章：你可视为对%dest使用一张牌",
 
   ["$lunzhang"] = "论章",
   ["@lunzhang_obtain-turn"] = "本回合获得牌数",
   ["lunzhang_lose-turn"] = "论章-可使用",
-  ["#lunzhang-recast"] = "论章：你可重铸至多 %arg 张牌",
-  ["#lunzhang-choose"] = "论章：你可与一名角色拼点，若赢，可视为对其使用一张你本回合失去过的牌",
-  ["#lunzhang-use"] = "论章：你可视为对%dest使用一张牌",
 }
 
 local U = require "packages.utility.utility"
@@ -72,8 +72,9 @@ lunzhang:addEffect(fk.TurnEnd,{
     if #to == 0 then return end
     to = to[1]
     local pindian = player:pindian({to}, lunzhang.name)
+    if player.dead then return end
     if pindian.results[to].winner == player then
-      if player.dead or to.dead then return end
+      if to.dead then return end
       local card_names = table.filter(player:getTableMark("lunzhang_lose-turn") or {}, function(name)
         local card = Fk:cloneCard(name)
         return player:canUseTo(card, to) and not player:prohibitUse(card)
@@ -91,6 +92,11 @@ lunzhang:addEffect(fk.TurnEnd,{
         },
         skip = false,
       })
+    else
+      if pindian.results[to] and pindian.results[to].toCard 
+        and room:getCardArea(pindian.results[to].toCard) == Card.DiscardPile then
+      room:moveCardTo(pindian.results[to].toCard, Card.PlayerHand, player, fk.ReasonJustMove, lunzhang.name, nil, true, player)
+    end
     end
   end,
 })
