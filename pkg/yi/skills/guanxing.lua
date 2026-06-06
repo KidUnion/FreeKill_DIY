@@ -60,6 +60,7 @@ guanxing:addEffect(fk.EventPhaseStart, {
       local card = Fk:getCardById(id)
       return card:getMark("@@yi__guanxing-inhand") > 0
     end)
+    guanxing_cards = table.connect(player:getPile("yi__kongcheng__pile"), guanxing_cards)
     if #guanxing_cards > 0 then
       local result = room:askToGuanxing(player, {
         cards = guanxing_cards,

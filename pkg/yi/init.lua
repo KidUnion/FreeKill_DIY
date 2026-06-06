@@ -76,16 +76,16 @@ Fk:loadTranslationTable{
 --   ["~yi__wangping"] = "无当飞军，也有困于深林之时……",
 -- }
 
--- General:new(extension, "yi__zhaoyun", "shu", 4):addSkills { "yi__longdan" }
--- Fk:loadTranslationTable{
---   ["yi__zhaoyun"] = "异赵云",
---   ["#yi__zhaoyun"] = "虎将龙胆",
---   ["designer:yi__zhaoyun"] = "KidUnion",
+General:new(extension, "yi__zhaoyun", "shu", 4):addSkills { "yi__longdan", "yi__yajiao" }
+Fk:loadTranslationTable{
+  ["yi__zhaoyun"] = "异赵云",
+  ["#yi__zhaoyun"] = "虎将龙胆",
+  ["designer:yi__zhaoyun"] = "KidUnion",
   
---   ["$yi__longdan1"] = "保驾扶危主，冲阵透重围！",
---   ["$yi__longdan2"] = "银枪映豪胆，赤血鉴忠心！",
---   ["~yi__zhaoyun"] = "生驱单骑摧敌锐，死作忠魂佑主周！",
--- }
+  ["$yi__longdan1"] = "保驾扶危主，冲阵透重围！",
+  ["$yi__longdan2"] = "银枪映豪胆，赤血鉴忠心！",
+  ["~yi__zhaoyun"] = "生驱单骑摧敌锐，死作忠魂佑主周！",
+}
 
 General:new(extension, "yi__yuanshu", "qun", 3):addSkills { "yi__wangzun", "yi__tongji" }
 Fk:loadTranslationTable{
@@ -105,13 +105,78 @@ Fk:loadTranslationTable{
   ["~yi__zhenji"] = "悼良会之永绝兮，哀一逝而异乡。",
 }
 
-General:new(extension, "yi__zhouyu", "wu", 3):addSkills { "yi__fanjian", "yi__yingzi" }
+General:new(extension, "yi__zhouyu", "wu", 3):addSkills { "yi__fanjian", "yi__yingzi", "yi__keji"}
 Fk:loadTranslationTable{
   ["yi__zhouyu"] = "异周瑜",
   ["#yi__zhouyu"] = "雄姿英发",
   ["designer:yi__zhouyu"] = "KidUnion",
 
   ["~yi__zhouyu"] = "既生瑜，何生……",
+}
+
+local weapon__keji = fk.CreateCard{
+  name = "&weapon__keji",
+  type = Card.TypeEquip,
+  sub_type = Card.SubtypeWeapon,
+}
+extension:loadCardSkels{weapon__keji}
+extension:addCardSpec("weapon__keji")
+
+local armor__keji = fk.CreateCard{
+  name = "&armor__keji",
+  type = Card.TypeEquip,
+  sub_type = Card.SubtypeArmor,
+}
+extension:loadCardSkels{armor__keji}
+extension:addCardSpec("armor__keji")
+
+local offensive_horse__keji = fk.CreateCard{
+  name = "&offensive_horse__keji",
+  type = Card.TypeEquip,
+  sub_type = Card.SubtypeOffensiveRide,
+}
+extension:loadCardSkels{offensive_horse__keji}
+extension:addCardSpec("offensive_horse__keji")
+
+local defensive_horse__keji = fk.CreateCard{
+  name = "&defensive_horse__keji",
+  type = Card.TypeEquip,
+  sub_type = Card.SubtypeDefensiveRide,
+}
+extension:loadCardSkels{defensive_horse__keji}
+extension:addCardSpec("defensive_horse__keji")
+
+local treasure__keji = fk.CreateCard{
+  name = "&treasure__keji",
+  type = Card.TypeEquip,
+  sub_type = Card.SubtypeTreasure,
+}
+extension:loadCardSkels{treasure__keji}
+extension:addCardSpec("treasure__keji")
+Fk:loadTranslationTable{
+  ["weapon__keji"] = "克己",
+  ["armor__keji"] = "克己",
+  ["offensive_horse__keji"] = "克己",
+  ["defensive_horse__keji"] = "克己",
+  ["treasure__keji"] = "克己",
+  [":weapon__keji"] = "这是一张“克己”武器。",
+  [":armor__keji"] = "这是一张“克己”防具。",
+  [":offensive_horse__keji"] = "这是一张“克己”进攻坐骑。",
+  [":defensive_horse__keji"] = "这是一张“克己”防御坐骑。",
+  [":treasure__keji"] = "这是一张“克己”宝物。",
+}
+
+General:new(extension, "yi__caocao", "wei", 4):addSkills { "yi__jianxiong", "yi__hujia" }
+Fk:loadTranslationTable{
+  ["yi__caocao"] = "异曹操",
+  ["#yi__caocao"] = "奉挟令伐",
+  ["designer:yi__caocao"] = "KidUnion",
+
+  ["$yi__jianxiong1"] = "孤上承天命，会猎于江夏，幸勿观望。",
+  ["$yi__jianxiong2"] = "今雄兵百万，奉词伐罪，敢不归顺？",
+  ["$yi__hujia1"] = "虎贲三千，堪当敌万余！",
+  ["$yi__hujia2"] = "壮士八百，足护卫吾身！",
+  ["~yi__caocao"] = "狐死归首丘，故乡安可忘……",
 }
 
 return extension

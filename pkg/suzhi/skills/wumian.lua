@@ -23,13 +23,13 @@ Fk:loadTranslationTable{
 wumian:addEffect(fk.AfterCardsMove, {
   anim_type = "offensive",
   can_trigger = function(self, event, target, player, data)
-    if not  player:hasSkill(wumian.name) then return end
+    if not player:hasSkill(wumian.name) then return end
     local cost_data = {}
     for _, move in ipairs(data) do
       if move.from == player and move.moveReason == fk.ReasonDiscard then
         for _, info in ipairs(move.moveInfo) do
-          if (info.fromArea == Card.PlayerEquip or info.fromArea == Card.PlayerHand) and 
-          not table.contains(player:getTableMark("wumian_types-phase"), Fk:getCardById(info.cardId).type) then
+          if not table.contains(player:getTableMark("wumian_types-phase"), Fk:getCardById(info.cardId).type)
+            and (info.fromArea == Card.PlayerEquip or info.fromArea == Card.PlayerHand) then
             table.insertIfNeed(cost_data, Fk:getCardById(info.cardId).type)
           end
         end
@@ -48,7 +48,7 @@ wumian:addEffect(fk.AfterCardsMove, {
     for _, type in ipairs(types) do
       if type == Card.TypeBasic then
         table.insert(choices, "#wumian_basic")
-      elseif type == Card.TypeTrick then
+      elseif type == Card.TypeTrick and #player.room:canMoveCardInBoard("ej") > 0 then
         table.insert(choices, "#wumian_trick")
       elseif type == Card.TypeEquip then
         table.insert(choices, "#wumian_equip")
@@ -60,21 +60,22 @@ wumian:addEffect(fk.AfterCardsMove, {
         skill_name = wumian.name,
         all_choices = {"#wumian_basic", "#wumian_trick", "#wumian_equip"},
         prompt = "#wumian-choose",
+        cancelable = true,
       })
       if choice == "#wumian_basic" then
+        room:addTableMark(player, "wumian_types-phase", Card.TypeBasic)
         local use = room:askToUseVirtualCard(player, {
           name = "slash",
           skill_name = wumian.name,
           prompt = "#wumian_slash",
+          cancelable = false,
         })
-        if not use then return end
-        room:addTableMark(player, "wumian_types-phase", Card.TypeBasic)
       elseif choice == "#wumian_trick" then
+        room:addTableMark(player, "wumian_types-phase", Card.TypeTrick)
         local targets = room:askToChooseToMoveCardInBoard(player, {
           prompt = "#wumian_move-choose",
           skill_name = wumian.name,
           no_indicate = true,
-          flag = "ej",
         })
         if #targets == 0 then return end
         room:askToMoveCardInBoard(player, {
@@ -83,10 +84,9 @@ wumian:addEffect(fk.AfterCardsMove, {
           skill_name = wumian.name,
         })
         player:drawCards(1, wumian.name)
-        room:addTableMark(player, "wumian_types-phase", Card.TypeTrick)
       elseif choice == "#wumian_equip" then
-        room:setPlayerMark(player, "@@wumian_extraplay-turn", 1)
         room:addTableMark(player, "wumian_types-phase", Card.TypeEquip)
+        room:setPlayerMark(player, "@@wumian_extraplay-turn", 1)
       end
     end
   end,

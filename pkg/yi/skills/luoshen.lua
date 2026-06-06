@@ -4,7 +4,8 @@ local luoshen = fk.CreateSkill {
 
 Fk:loadTranslationTable{
   ["yi__luoshen"] = "洛神",
-  [":yi__luoshen"] = "当你/其他角色使用黑色牌时，你/其与其他角色/你的距离-1/+1直至回合结束，若有角色因此进入或离开了一名角色的攻击范围，你可弃置其中一名角色一张牌。",
+  [":yi__luoshen"] = "当你/其他角色使用黑色非基本牌时，你/其他角色与其他角色/你的距离-1/+1直至回合结束，"..
+  "若有角色因此进入或离开了一名角色的攻击范围，你可弃置其一张牌。",
   ["@yi__luoshen_off-turn"] = "洛神 -",
   ["@yi__luoshen_def-turn"] = "洛神 +",
   ["#yi__luoshen-discard"] = "洛神：你可以弃置其中一名角色的一张牌",
@@ -17,7 +18,7 @@ luoshen:addEffect(fk.CardUsing, {
   anim_type = "control",
   
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(luoshen.name) and data.card.color == Card.Black
+    return player:hasSkill(luoshen.name) and data.card.color == Card.Black and data.card.type ~= Card.TypeBasic
   end,
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)

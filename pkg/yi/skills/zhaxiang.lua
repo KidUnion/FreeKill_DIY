@@ -6,7 +6,6 @@ Fk:loadTranslationTable{
   ["yi__zhaxiang"] = "诈降",
   [":yi__zhaxiang"] = "当你失去体力后，你可摸三张牌并明置其中的非伤害牌，其余牌不可被响应；"..
   "你每轮首次失去一种花色的明置牌后可视为使用一张无距离限制的火【杀】。",
-  ["@@visible"] = "明置",
   ["@@yi__zhaxiang_damage"] = "不可被响应",
   ["@yi__zhaxiang-round"] = "诈降",
   ["#yi__zhaxiang"] = "诈降：你可以摸三张牌并明置其中的非伤害牌",
@@ -17,6 +16,8 @@ Fk:loadTranslationTable{
   ["$yi__zhaxiang1"] = "铁锁连舟而行，东吴水师可破！",
   ["$yi__zhaxiang2"] = "两军阵前，不斩降将！",
 }
+
+local mobileUtil = require "packages.mobile.mobile_util"
 
 zhaxiang:addEffect(fk.HpLost, {
   anim_type = "drawcard",
@@ -29,13 +30,14 @@ zhaxiang:addEffect(fk.HpLost, {
     local visible = {}
     for _, id in ipairs(cards) do
       local card = Fk:getCardById(id)
-      if(not card.is_damage_card) then
-        room:setCardMark(card, "@@visible", 1)
+      if not card.is_damage_card then
+        room:setCardMark(card, "visible", 1)
         table.insert(visible, id)
       else 
         room:setCardMark(card, "@@yi__zhaxiang_damage", 1)
       end
     end
+    mobileUtil.displayCards(player, visible)
     player:showCards(visible)
   end,
 })
@@ -60,7 +62,7 @@ zhaxiang:addEffect(fk.AfterCardsMove, {
         for _, info in ipairs(move.moveInfo) do
           local card = Fk:getCardById(info.cardId)
           suit = card:getSuitString(true)
-          if card:getMark("@@visible") > 0 or info.fromArea == Card.PlayerEquip then
+          if card:getMark("visible") > 0 or info.fromArea == Card.PlayerEquip then
             if not table.contains(suits, suit) and suit ~= Card.NoSuit then
               player.room:addTableMark(player, "@yi__zhaxiang-round", suit)
               can_use = true
@@ -70,7 +72,7 @@ zhaxiang:addEffect(fk.AfterCardsMove, {
       end
       if move.to == player then
         for _, info in ipairs(move.moveInfo) do
-          player.room:setCardMark(Fk:getCardById(info.cardId), "@@visible", 0)
+          player.room:setCardMark(Fk:getCardById(info.cardId), "visible", 0)
         end
       end
       return can_use
@@ -124,7 +126,7 @@ return zhaxiang
 --     for _, id in ipairs(cards) do
 --       local card = Fk:getCardById(id)
 --       if(not card.is_damage_card) then
---         room:setCardMark(card, "@@visible", 1)
+--         room:setCardMark(card, "visible", 1)
 --         table.insert(visible, id)
 --       else 
 --         room:setCardMark(card, "@@yi__zhaxiang_damage", 1)
@@ -157,8 +159,8 @@ return zhaxiang
 --         for _, info in ipairs(move.moveInfo) do
 --           local card = Fk:getCardById(info.cardId)
 --           suit = card:getSuitString(true)
---           if card:getMark("@@visible") > 0 or info.fromArea == Card.PlayerEquip then
---             card:setMark("@@visible", 0)
+--           if card:getMark("visible") > 0 or info.fromArea == Card.PlayerEquip then
+--             card:setMark("visible", 0)
 --             if not table.contains(suits, suit) and suit ~= Card.NoSuit then
 --               player.room:addTableMark(player, "@yi__zhaxiang-round", suit)
 --               can_use = true

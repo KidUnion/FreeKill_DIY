@@ -4,7 +4,7 @@ local miyan = fk.CreateSkill {
 
 Fk:loadTranslationTable{
   ["miyan"] = "迷烟",
-  [":miyan"] = "当你成为【杀】的目标时，你可交给你攻击范围内的角色一张牌，然后获得此【杀】或令其交给你一张牌。",
+  [":miyan"] = "每回合限一次，当你成为【杀】的目标时，你可交给你攻击范围内的角色一张牌，然后获得此【杀】或令其交给你一张牌。",
   ["#miyan-give"] = "迷烟：你可以交给攻击范围内的一名角色一张牌",
   ["#miyan-choose"] = "迷烟：选择获得此【杀】或令%dest交给你一张牌",
   ["miyan1"] = "获得此【杀】",
@@ -17,11 +17,14 @@ Fk:loadTranslationTable{
 miyan:addEffect(fk.TargetConfirming, {
   anim_type = "defensive",
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(self) and data.card.trueName == "slash"
+    return target == player and player:hasSkill(self) and data.card.trueName == "slash" 
+      and player:usedSkillTimes(miyan.name, Player.HistoryTurn) == 0
   end,
   on_cost = function(self, event, target, player, data)
     local room = player.room
-    local targets = table.filter(room.alive_players, function(p) return player:inMyAttackRange(p) end)
+    local targets = table.filter(room.alive_players, function(p) 
+      return player:inMyAttackRange(p) 
+    end)
     if #targets < 1 then return end
     local target, card = room:askToChooseCardsAndPlayers(player, {
       min_num = 1,

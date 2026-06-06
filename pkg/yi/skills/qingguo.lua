@@ -1,11 +1,10 @@
 local qingguo = fk.CreateSkill {
   name = "yi__qingguo",
-  -- frequency = Skill.Compulsory,
 }
 
 Fk:loadTranslationTable{
   ["yi__qingguo"] = "倾国",
-  [":yi__qingguo"] = "锁定技，当你或你攻击范围内的角色失去【闪】时，你从牌堆中获得一张黑色牌，此牌不计次数与手牌上限。",
+  [":yi__qingguo"] = "当你或你攻击范围内的角色每回合首次失去【闪】时，你可获得一张黑色牌，此牌不计次数与手牌上限。",
   ["@@yi__qingguo-inhand"] = "倾国",
 
   ["$yi__qingguo1"] = "髣髴兮若轻云之蔽月。",
@@ -19,7 +18,9 @@ qingguo:addEffect(fk.AfterCardsMove, {
       for _, move in ipairs(data) do
         if move.from and (player:inMyAttackRange(move.from) or move.from == player) then
           for _, info in ipairs(move.moveInfo) do
-            if (info.fromArea == Player.Hand or info.fromArea == Player.Equip) and Fk:getCardById(info.cardId).name == "jink" then
+            if (info.fromArea == Player.Hand or info.fromArea == Player.Equip) and Fk:getCardById(info.cardId).name == "jink" 
+              and move.from:getMark("yi__qingguo-turn") == 0 then
+              player.room:setPlayerMark(move.from, "yi__qingguo-turn", 1)
               return true
             end
           end
@@ -32,7 +33,7 @@ qingguo:addEffect(fk.AfterCardsMove, {
     local room = player.room
     local cards = room:getCardsFromPileByRule(".|.|spade,club")
     if #cards > 0 then
-      room:obtainCard(player, cards, true, fk.ReasonJustMove, player, qingguo.name)
+      room:obtainCard(player, cards, true, fk.ReasonJustMove, player, qingguo.name, "@@yi__qingguo-inhand")
     end
   end
 })

@@ -70,7 +70,7 @@ Fk:loadTranslationTable{
     ["~lubing"] = "我……我输了……",
   }
 
-  General:new(extension, "niyangyin", "wei", 3):addSkills { "lunzhang", "chengyun" }
+  General:new(extension, "niyangyin", "wei", 3, 3, General.Female):addSkills { "lunzhang", "chengyun" }
   Fk:loadTranslationTable{
     ["niyangyin"] = "倪扬英",
     ["#niyangyin"] = "NaNi",

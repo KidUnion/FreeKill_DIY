@@ -6,7 +6,6 @@ Fk:loadTranslationTable{
   ["yi__yingzi"] = "英姿",
   [":yi__yingzi"] = "摸牌阶段开始时，你可摸X张牌或获得一张你未明置的类型（由你指定）的牌；\r\n"..
   "你的手牌上限+X。（X为你明置牌的类型数）",
-  ["@@visible"] = "明置",
   ["#yi__yingzi-choice"] = "英姿：你可选择一项",
   ["#yi__yingzi_basic"] = "获得一张基本牌",
   ["#yi__yingzi_equip"] = "获得一张装备牌",
@@ -17,6 +16,8 @@ Fk:loadTranslationTable{
   ["$yi__yingzi2"] = "定策分两治，纵马饮三江！",
 }
 
+local mobileUtil = require "packages.mobile.mobile_util"
+
 yingzi:addEffect(fk.EventPhaseStart, {
   anim_type = "drawcard",
   can_trigger = function(self, event, target, player, data)
@@ -25,14 +26,15 @@ yingzi:addEffect(fk.EventPhaseStart, {
   on_cost = function(self, event, target, player, data)
     local room = player.room
     local types = {"basic", "equip", "trick"}
-    for _, id in ipairs(player:getCardIds("h")) do
+    for _, id in ipairs(player:getCardIds("he")) do
       local card = Fk:getCardById(id)
-      if card:getMark("@@visible") > 0 and table.contains(types, card:getTypeString()) then
+      if mobileUtil.cardIsVisible(player.room, card) and table.contains(types, card:getTypeString()) then
         table.removeOne(types, card:getTypeString())
       end
-    end
-    if #player:getCardIds("e") > 0 and table.contains(types, "equip") then
-      table.removeOne(types, "equip")
+
+      if #types == 0 then
+        break
+      end
     end
     
     local choices = {}
@@ -48,7 +50,7 @@ yingzi:addEffect(fk.EventPhaseStart, {
       prompt = "#yi__yingzi-choice",
       cancelable = true,
     })
-    if not choice then return false end
+    if choice == "Cancel" then return false end
     event:setCostData(self, { choice = choice })
     return true
   end,
@@ -70,7 +72,7 @@ yingzi:addEffect(fk.EventPhaseStart, {
       end)
     else
       local num = tonumber(string.match(choice, "#yi__yingzi_draw:::(%d+)"))
-      player:drawCards(num, self.name)
+      player:drawCards(num, yingzi.name)
       return
     end
     room:obtainCard(player, table.random(cards), false, fk.ReasonJustMove, player, yingzi.name)
@@ -82,15 +84,17 @@ yingzi:addEffect("maxcards", {
   correct_func = function(self, player)
     if player:hasSkill(yingzi.name) then
       local types = {}
-      for _, id in ipairs(player:getCardIds("h")) do
+      for _, id in ipairs(player:getCardIds("he")) do
         local card = Fk:getCardById(id)
-        if card:getMark("@@visible") > 0 then
-          table.insertIfNeed(types, card:getTypeString())
+        if mobileUtil.cardIsVisible(Fk:currentRoom(), card) then
+          table.insertIfNeed(types, card.type)
+        end
+
+        if #types > 2 then
+          break
         end
       end
-      if #player:getCardIds("e") > 0 then
-        table.insertIfNeed(types, "equip")
-      end
+
       return #types
     end
   end,

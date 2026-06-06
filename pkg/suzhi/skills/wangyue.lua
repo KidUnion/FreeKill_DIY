@@ -4,7 +4,7 @@ local wangyue = fk.CreateSkill {
 
 Fk:loadTranslationTable{
   ["suzhi__wangyue"] = "望岳",
-  [":suzhi__wangyue"] = "出牌阶段限一次，你可与一名手牌数不大于你的角色交换手牌，然后摸两张牌并将手牌弃至与其相同，本回合你与其距离视为一。",
+  [":suzhi__wangyue"] = "出牌阶段限｛一｝次，你可与一名其他角色同时将手牌数向对方调整｛两｝张，若此过程中你与其的手牌数大小关系不变，你可交换｛｝中的数字，否则你可与其交换手牌。",
   ["#suzhi__wangyue-active"] = "发动〖望岳〗，与一名手牌数不大于你的角色交换手牌",
   ["#suzhi__wangyue-discard"] = "望岳：你须将手牌弃至与其相同",
   

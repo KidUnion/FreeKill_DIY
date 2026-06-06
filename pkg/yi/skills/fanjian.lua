@@ -9,12 +9,13 @@ Fk:loadTranslationTable{
   ["#yi__fanjian"] = "反间：明置一名角色半数手牌并明置一种花色的手牌",
   ["@@yi__fanjian"] = "反间",
   ["@yi__fanjian_suits"] = "反间",
-  ["@@visible"] = "明置",
   ["#yi__fanjian-suit"] = "反间：明置一种花色的手牌",
   
   ["$yi__fanjian1"] = "挣扎吧，在血和暗的深渊里！",
   ["$yi__fanjian2"] = "痛苦吧，在仇与恨的地狱中！",
 }
+
+local mobileUtil = require "packages.mobile.mobile_util"
 
 fanjian:addEffect("active", {
   anim_type = "offensive",
@@ -40,9 +41,10 @@ fanjian:addEffect("active", {
       flag = "h",
     })
     for _, id in ipairs(cards) do
-      room:setCardMark(Fk:getCardById(id), "@@visible", 1)
+      room:setCardMark(Fk:getCardById(id), "visible", 1)
     end
     target:showCards(cards)
+    mobileUtil.displayCards(player, cards)
     if target.dead then return end
     room:addPlayerMark(target, "@@yi__fanjian", 1)
     local cards_bysuit = {["log_spade"] = {}, ["log_heart"] = {}, ["log_club"] = {}, ["log_diamond"] = {}}
@@ -59,9 +61,10 @@ fanjian:addEffect("active", {
       prompt = "#yi__fanjian-suit",
     })
     for _, card in ipairs(cards_bysuit[choice]) do
-      room:setCardMark(card, "@@visible", 1)
+      room:setCardMark(card, "visible", 1)
     end
     player:showCards(cards_bysuit[choice])
+    mobileUtil.displayCards(player, cards_bysuit[choice])
     room:addTableMarkIfNeed(target, "@yi__fanjian_suits", choice)
   end,
 })
@@ -69,7 +72,7 @@ fanjian:addEffect("active", {
 fanjian:addEffect(fk.CardUseFinished, {
   anim_type = "special",
   can_trigger = function(self, event, target, player, data)
-    return player:hasSkill(fanjian.name) and target:getMark("@@yi__fanjian") > 0 and (data.card:getMark("@@visible") > 0 
+    return player:hasSkill(fanjian.name) and target:getMark("@@yi__fanjian") > 0 and (data.card:getMark("visible") > 0 
       or table.contains(target:getTableMark("@yi__fanjian_suits"), data.card:getSuitString(true)))
   end,
   on_trigger = function(self, event, target, player, data)
@@ -78,8 +81,8 @@ fanjian:addEffect(fk.CardUseFinished, {
       room:setPlayerMark(target, "@yi__fanjian_suits", 0)
       room:loseHp(target, 1, fanjian.name)
     end
-    if data.card:getMark("@@visible") > 0 then
-      room:setCardMark(data.card, "@@visible", 0)
+    if data.card:getMark("visible") > 0 then
+      room:setCardMark(data.card, "visible", 0)
       room:obtainCard(player, data.card, true, fk.ReasonJustMove, player, fanjian.name)
     end
   end,
@@ -92,7 +95,7 @@ fanjian:addEffect(fk.AfterCardsMove, {
     for _, move in ipairs(data) do
       if move.to == player then
         for _, info in ipairs(move.moveInfo) do
-          player.room:setCardMark(Fk:getCardById(info.cardId), "@@visible", 0)
+          player.room:setCardMark(Fk:getCardById(info.cardId), "visible", 0)
         end
       end
       return false
@@ -110,6 +113,15 @@ fanjian:addEffect(fk.TurnStart, {
     for _, p in ipairs(room.alive_players) do
       room:setPlayerMark(p, "@@yi__fanjian", 0)
       room:setPlayerMark(p, "@yi__fanjian_suits", 0)
+    end
+  end,
+})
+
+fanjian:addEffect("visibility", {
+  card_visible = function (self, player, card, toChoose)
+    local p = Fk:currentRoom():getCardOwner(card)
+    if p and mobileUtil.cardIsVisible(Fk:currentRoom(), card) and player ~= p then
+      return true
     end
   end,
 })

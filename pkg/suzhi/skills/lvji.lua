@@ -4,7 +4,7 @@ local lvji = fk.CreateSkill {
 
 Fk:loadTranslationTable{
   ["lvji"] = "律己",
-  [":lvji"] = "出牌阶段，牌堆顶的4张牌对你可见（你响应牌后此数值-1直至你下回合结束）；"..
+  [":lvji"] = "出牌阶段，牌堆顶的4张牌对你可见（你每轮首次响应牌后此数值-1）；"..
   "出牌阶段开始时，你可弃置一张牌，本回合你可使用其中花色与之相同的牌。",
   ["#lvji"] = "律己：观看牌堆顶%arg张牌，使用其中你需要的牌",
   ["#lvji-discard"] = "律己：弃一张牌，本回合你可使用牌堆顶此花色的牌",
@@ -109,11 +109,15 @@ lvji:addEffect(fk.AfterCardsMove, spec)
   
 local spec2 = {
   can_trigger = function(self, event, target, player, data)
-    return player == target and (event == fk.CardResponding or (event == fk.CardUsing and data.responseToEvent))
-    and player:hasSkill(lvji.name)
+    return player == target
+      and (event == fk.CardResponding or (event == fk.CardUsing and data.responseToEvent))
+      and player:hasSkill(lvji.name)
+      and player:getMark("lvji_response-round") == 0
   end,
-  on_trigger = function(self, event, target, player, data)
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
     local room = player.room
+    room:setPlayerMark(player, "lvji_response-round", 1)
     room:setPlayerMark(player, "@lvji_num", math.max(0, player:getMark("@lvji_num") - 1))
     room:notifySkillInvoked(player, self.name, "negative")
   end,
@@ -121,16 +125,6 @@ local spec2 = {
 
 lvji:addEffect(fk.CardResponding, spec2)
 lvji:addEffect(fk.CardUsing, spec2)
-  
-lvji:addEffect(fk.TurnEnd, {
-  mute = true,
-  can_trigger = function(self, event, target, player, data)
-    return player == target
-  end,
-  on_trigger = function(self, event, target, player, data)
-    player.room:setPlayerMark(player, "@lvji_num", 4)
-  end,
-})
     
 lvji:addAcquireEffect(function (self, player, is_start)
   local room = player.room
