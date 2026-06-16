@@ -34,14 +34,14 @@ Fk:loadTranslationTable{
     ["~chenbaohai"] = "我……我输了……",
   }
   
-  -- General:new(extension, "zhouyunjie", "qun", 3):addSkills { "raoshe" }
-  -- Fk:loadTranslationTable{
-  --   ["zhouyunjie"] = "周云杰",
-  --   ["#zhouyunjie"] = "黑神",
-  --   ["designer:zhouyunjie"] = "KidUnion",
+  General:new(extension, "zhouyunjie", "qun", 3):addSkills { "raoshe", "cifeng" }
+  Fk:loadTranslationTable{
+    ["zhouyunjie"] = "周云杰",
+    ["#zhouyunjie"] = "黑神",
+    ["designer:zhouyunjie"] = "KidUnion",
   
-  --   ["~zhouyunjie"] = "我……我输了……",
-  -- }
+    ["~zhouyunjie"] = "我……我输了……",
+  }
   
   General:new(extension, "quanzezhi", "qun", 4):addSkills { "suzhi__wangyue", "zuiquan" }
   Fk:loadTranslationTable{

@@ -1,5 +1,6 @@
 local lvdong = fk.CreateSkill {
   name = "lvdong",
+  tags = { Skill.Compulsory },
 }
 
 Fk:loadTranslationTable{

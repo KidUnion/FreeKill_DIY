@@ -11,14 +11,21 @@ Fk:loadTranslationTable{
   ["@@zuiquan-turn"] = "醉拳",
 }
 
+local function zuiquanAnaleptic()
+  local card = Fk:cloneCard("analeptic")
+  card.skillName = zuiquan.name
+  return card
+end
+
 zuiquan:addEffect("viewas", {
   anim_type = "offensive",
   prompt = "#zuiquan-active",
   card_num = 0,
   view_as = function(self)
-    local card = Fk:cloneCard("analeptic")
-    card.skillName = zuiquan.name
-    return card
+    return zuiquanAnaleptic()
+  end,
+  before_use = function(self, player, use)
+    use.extraUse = false
   end,
   after_use = function(self, player, useData)
     local room = player.room
@@ -27,42 +34,44 @@ zuiquan:addEffect("viewas", {
     room:recastCard(card, player, self.name)
   end,
   enabled_at_play = function (self, player)
-    return player.phase == Player.Play and player:canUse(Fk:cloneCard("analeptic")) and 
+    return player.phase == Player.Play and player:canUse(zuiquanAnaleptic()) and
     #player:getCardIds(Player.Hand) > 0
   end,
   enabled_at_response = Util.FalseFunc,
 })
   
-  zuiquan:addEffect(fk.AfterCardsMove, {
-    can_trigger = function(self, event, target, player, data)
-      if not player:hasSkill(zuiquan.name) then return end
-      for _, move in ipairs(data) do
-        if move.toArea == Card.DiscardPile then
-          for _, info in ipairs(move.moveInfo) do
-            local card = Fk:getCardById(info.cardId)
-            return card and card.trueName == "jink"
-          end
+zuiquan:addEffect(fk.AfterCardsMove, {
+  can_trigger = function(self, event, target, player, data)
+    if not player:hasSkill(zuiquan.name) then return end
+    for _, move in ipairs(data) do
+      if move.toArea == Card.DiscardPile then
+        for _, info in ipairs(move.moveInfo) do
+          local card = Fk:getCardById(info.cardId)
+          return card and card.trueName == "jink"
         end
       end
-    end,
-    on_trigger = function(self, event, target, player, data)
-      local room = player.room
-      room:setPlayerMark(player, "@@zuiquan-turn", 1)
-    end,
-  
-    refresh_events = {fk.CardUsing},
-    can_refresh = function (self, event, target, player, data)
-      return player == target and (data.card.trueName == "slash" or data.card.trueName == "analeptic")
-    end,
-    on_refresh = function (self, event, target, player, data)
-      local room = player.room
-      room:setPlayerMark(player, "@@zuiquan-turn", 0)
-    end,
+    end
+  end,
+  on_trigger = function(self, event, target, player, data)
+    local room = player.room
+    room:setPlayerMark(player, "@@zuiquan-turn", 1)
+  end,
+})
+
+zuiquan:addEffect(fk.CardUsing, {
+  mute = true,
+  can_trigger = function(self, event, target, player, data)
+    return player == target and player:getMark("@@zuiquan-turn") > 0 and
+      (data.card.trueName == "slash" or data.card.trueName == "analeptic")
+  end,
+  on_trigger = function(self, event, target, player, data)
+    player.room:setPlayerMark(player, "@@zuiquan-turn", 0)
+  end,
 })
 
 zuiquan:addEffect("targetmod", {
   bypass_times = function(self, player, skill, scope, card)
-    return (card.trueName == "slash" or card.trueName == "analeptic") and player:getMark("@@zuiquan-turn") > 0
+    return card and (card.trueName == "slash" or card.trueName == "analeptic") and player:getMark("@@zuiquan-turn") > 0
   end,
 })
 
