@@ -11,6 +11,9 @@ Fk:loadTranslationTable{
   ["#yi__longdan-yin"] = "弃置一张牌并视为使用%arg",
   ["#yi__longdan_prohibit"] = "龙胆",
   ["@yi__longdan-turn"] = "龙胆",
+
+  ["$yi__longdan1"] = "保驾扶危主，冲阵透重围！",
+  ["$yi__longdan2"] = "银枪映豪胆，赤血鉴忠心！",
 }
 
 longdan:addEffect("viewas", {

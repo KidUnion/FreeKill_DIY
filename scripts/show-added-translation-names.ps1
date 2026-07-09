@@ -145,7 +145,7 @@ foreach ($repoRoot in ($repoFiles.Keys | Sort-Object)) {
     "-c", "core.quotepath=false",
     "-c", "i18n.logOutputEncoding=utf-8",
     "-C", $repoRoot,
-    "diff", "HEAD~1", "HEAD", "--unified=0", "--"
+    "diff", "HEAD~3", "HEAD", "--unified=0", "--"
   ) + $paths
 
   $diff = & git @gitArgs 2>$null

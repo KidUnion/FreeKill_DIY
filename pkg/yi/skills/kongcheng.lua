@@ -36,7 +36,7 @@ kongcheng:addEffect(fk.AfterCardsMove, {
   can_trigger = function (self, event, target, player, data)
     if player:hasSkill(kongcheng.name) then
       for _, move in ipairs(data) do
-        if move.from == player then
+        if move.from == player and (move.moveReason == fk.ReasonUse or move.moveReason == fk.ReasonResponse) then
           for _, info in ipairs(move.moveInfo) do
             if info.fromSpecialName == "yi__kongcheng__pile" then
               return true

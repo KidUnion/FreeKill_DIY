@@ -8,8 +8,8 @@ local wangyue = fk.CreateSkill {
 
 Fk:loadTranslationTable{
   ["suzhi__wangyue"] = "望岳",
-  [":suzhi__wangyue"] = "出牌阶段限｛1｝次，你可与一名其他角色同时将手牌数向对方调整｛1｝张，若你与其手牌数大小关系不变，你可令｛｝中最小的一个数字+1。回合结束时，你将一项改为1。",
-  [":suzhi__wangyue_inner"] = "出牌阶段限｛{1}｝次，你可与一名其他角色同时将手牌数向对方调整｛{2}｝张，若你与其手牌数大小关系不变，你可令｛｝中最小的一个数字+1。回合结束时，你将一项改为1。",
+  [":suzhi__wangyue"] = "出牌阶段限｛1｝次，你可与一名其他角色同时将手牌数向对方调整｛1｝张并令｛｝中最小的一个数字+1；若你与其手牌数大小关系变化，第二项改为1。",
+  [":suzhi__wangyue_inner"] = "出牌阶段限｛{1}｝次，你可与一名其他角色同时将手牌数向对方调整｛{2}｝张并令｛｝中最小的一个数字+1；若你与其手牌数大小关系变化，第二项改为1。",
   ["#suzhi__wangyue-active"] = "发动〖望岳〗，与一名手牌数与你不同的其他角色调整手牌数",
   ["#suzhi__wangyue-discard"] = "望岳：弃置%arg张手牌",
   ["#suzhi__wangyue-upgrade"] = "望岳：你可令其中一项+1",
@@ -86,7 +86,6 @@ wangyue:addEffect("active", {
         p:drawCards(num, wangyue.name)
       end
     end
-    if player.dead or target.dead or compareHandNum(player, target) ~= relation then return end
     local times = getWangyueTimes(player)
     local card_num = getWangyueNum(player)
     local choices = {}
@@ -102,42 +101,16 @@ wangyue:addEffect("active", {
       prompt = "#suzhi__wangyue-upgrade",
       cancelable = true,
       all_choices = {"suzhi__wangyue_times", "suzhi__wangyue_num", "Cancel"},
-    })
+      })
     if choice == "suzhi__wangyue_times" then
       room:addPlayerMark(player, "@suzhi__wangyue_times", 1)
     elseif choice == "suzhi__wangyue_num" then
       room:addPlayerMark(player, "@suzhi__wangyue_num", 1)
     end
-  end,
-})
 
-wangyue:addEffect(fk.TurnEnd, {
-  anim_type = "negative",
-  can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(wangyue.name) and
-      (getWangyueTimes(player) > 1 or getWangyueNum(player) > 1)
-  end,
-  on_cost = Util.TrueFunc,
-  on_use = function(self, event, target, player, data)
-    local room = player.room
-    local choices = {}
-    if getWangyueTimes(player) > 1 then
-      table.insert(choices, "suzhi__wangyue_times")
+    if player.dead or target.dead or compareHandNum(player, target) ~= relation then
+      room:setPlayerMark(player, "@suzhi__wangyue_num", 1)
     end
-    if getWangyueNum(player) > 1 then
-      table.insert(choices, "suzhi__wangyue_num")
-    end
-    local choice = choices[1]
-    if #choices > 1 then
-      choice = room:askToChoice(player, {
-        choices = choices,
-        skill_name = wangyue.name,
-        prompt = "#suzhi__wangyue-reset",
-        cancelable = false,
-        all_choices = {"suzhi__wangyue_times", "suzhi__wangyue_num"},
-      })
-    end
-    room:setPlayerMark(player, "@"..choice, 1)
   end,
 })
 

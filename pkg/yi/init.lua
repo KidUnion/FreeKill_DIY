@@ -82,8 +82,6 @@ Fk:loadTranslationTable{
   ["#yi__zhaoyun"] = "虎将龙胆",
   ["designer:yi__zhaoyun"] = "KidUnion",
   
-  ["$yi__longdan1"] = "保驾扶危主，冲阵透重围！",
-  ["$yi__longdan2"] = "银枪映豪胆，赤血鉴忠心！",
   ["~yi__zhaoyun"] = "生驱单骑摧敌锐，死作忠魂佑主周！",
 }
 
@@ -172,11 +170,33 @@ Fk:loadTranslationTable{
   ["#yi__caocao"] = "奉挟令伐",
   ["designer:yi__caocao"] = "KidUnion",
 
-  ["$yi__jianxiong1"] = "孤上承天命，会猎于江夏，幸勿观望。",
-  ["$yi__jianxiong2"] = "今雄兵百万，奉词伐罪，敢不归顺？",
-  ["$yi__hujia1"] = "虎贲三千，堪当敌万余！",
-  ["$yi__hujia2"] = "壮士八百，足护卫吾身！",
   ["~yi__caocao"] = "狐死归首丘，故乡安可忘……",
+}
+
+General:new(extension, "yi__pangtong", "shu", 3):addSkills { "yi__lianhuan", "yi__niepan" }
+Fk:loadTranslationTable{
+  ["yi__pangtong"] = "异庞统",
+  ["#yi__pangtong"] = "鸾凤展翅",
+  ["designer:yi__pangtong"] = "KidUnion",
+
+  ["$yi__lianhuan1"] = "任凭潮涌，连环无惧！",
+  ["$yi__lianhuan2"] = "并排横江，可利水战！",
+  ["$yi__niepan2"] = "烈火焚身，凤羽更丰！",
+  ["$yi__niepan1"] = "雏凤展翼，风尘翕张！",
+  ["~yi__pangtong"] = "骥飞羽落，坡道归尘……",
+}
+
+General:new(extension, "yi__pangde", "wei", 4):addSkills { "yi__juesi", "yi__taichen" }
+Fk:loadTranslationTable{
+  ["yi__pangde"] = "异庞德",
+  ["#yi__pangde"] = "负榇搦战",
+  ["designer:yi__pangde"] = "KidUnion",
+
+  ["$yi__juesi1"] = "自知今日必死，更当英勇杀敌。",
+  ["$yi__juesi2"] = "抬棺而战，不死不休！",
+  ["$yi__taichen1"] = "不过一死而已，有何所惧。",
+  ["$yi__taichen2"] = "良将不惧死以苟免，烈士不毁节以求生。",
+  ["~yi__pangde"] = "要杀便杀，吾誓不降贼。",
 }
 
 return extension

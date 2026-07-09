@@ -1,102 +1,81 @@
-local guanxing = fk.CreateSkill {
-  name = "yi__guanxing",
+local jieshou = fk.CreateSkill {
+  name = "jieshou",
 }
 
 Fk:loadTranslationTable{
-  ["yi__guanxing"] = "观星",
-  [":yi__guanxing"] = "准备阶段，你可将手牌摸至｛7｝张并视为使用一张【火攻】，然后将以此法获得的牌以任意顺序置于牌堆顶或牌堆底；"..
-  "若你因此造成伤害或放置的牌数大于存活角色数，｛｝中的数字-1，否则你可分配任意张【空城】牌。",
-  ["#yi__guanxing"] = "观星：你可将手牌摸至%arg张，然后视为使用一张【火攻】",
-  ["#yi__guanxing_distribute"] = "观星：你可分配任意张【空城】牌",
-  ["@yi__guanxing"] = "观星",
-  ["@@yi__guanxing-inhand"] = "观星",
-  
-  ["$yi__guanxing1"] = "祈星辰之力，佑我蜀汉！",
-  ["$yi__guanxing2"] = "伏望天恩，誓讨汉贼！",
+  ["jieshou"] = "孑守",
+  [":jieshou"] = "当你的手牌数于出牌阶段变为一后，你可展示之并摸体力上限张牌；你于本回合失去此牌时减一点体力上限且此技能本回合失效。",
+  ["#jieshou-invoke"] = "孑守：你可展示手牌并摸体力上限张牌",
+  ["@@jieshou-inhand-turn"] = "孑守", 
+
+  ["$jieshou1"] = "不，我宁死不弃南郡！",
+  ["$jieshou2"] = "南郡城，就留你一人坚守！",
 }
 
-guanxing:addAcquireEffect(function (self, player, is_start)
-  player.room:setPlayerMark(player, "@yi__guanxing", 7)
-end)
-
-guanxing:addEffect(fk.EventPhaseStart, {
-  anim_type = "offensive",
+jieshou:addEffect(fk.AfterCardsMove, {
+  anim_type = "drawcard",
+  prompt = "#jieshou-invoke",
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(guanxing.name) and player.phase == Player.Start
+    if player:hasSkill(jieshou.name) and player:getHandcardNum() == 1 and player.phase == Player.Play then
+      for _, move in ipairs(data) do
+        if move.to == player and move.toArea == Card.PlayerHand then
+          return true
+        end
+        if move.from == player then
+          for _, info in ipairs(move.moveInfo) do
+            if info.fromArea == Card.PlayerHand then
+              return true
+            end
+          end
+        end
+      end
+    end
   end,
   on_cost = function(self, event, target, player, data)
-    return player.room:askToSkillInvoke(player, {
-      skill_name = guanxing.name,
-      prompt = "#yi__guanxing:::"..player:getMark("@yi__guanxing"),
-    })
+    local room = player.room
+    if room:askToSkillInvoke(player, {
+      skill_name = jieshou.name,
+      prompt = "#jieshou-invoke",
+    }) then return true end
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
-    local mark = math.floor(player:getMark("@yi__guanxing"))
-    local to_draw = math.max(0, mark - player:getHandcardNum())
-    if to_draw > 0 then
-      player:drawCards(to_draw, guanxing.name, "top", "@@yi__guanxing-inhand")
-    end  
-    local use = room:askToUseVirtualCard(player, {
-      name = "fire_attack",
-      skill_name = guanxing.name,
-      cancelable = false,
-    })
-
-    local guanxing_cards = table.filter(player:getCardIds(Player.Hand), function (id)
-      local card = Fk:getCardById(id)
-      return card:getMark("@@yi__guanxing-inhand") > 0
-    end)
-    if #guanxing_cards > 0 then
-      local result = room:askToGuanxing(player, {
-        cards = guanxing_cards,
-        skill_name = guanxing.name,
-        skip = true,
-      })
-      local top, bottom = result.top, result.bottom
-      room:moveCards({
-        ids = top,
-        from = player,
-        toArea = Card.DrawPile,
-        moveReason = fk.ReasonJustMove,
-        skillName = guanxing.name,
-        proposer = player,
-        drawPilePosition = 1,
-      })
-      room:moveCards({
-        ids = bottom,
-        from = player,
-        toArea = Card.DrawPile,
-        moveReason = fk.ReasonJustMove,
-        skillName = guanxing.name,
-        proposer = player,
-        drawPilePosition = -1,
-      })
-    end
-    if #guanxing_cards > #room:getAlivePlayers() or (use and use.damageDealt) then
-      room:notifySkillInvoked(player, guanxing.name, "negative")
-      room:removePlayerMark(player, "@yi__guanxing", 1)
-    else
-      if #player:getPile("yi__kongcheng__pile") == 0 then return end
-      room:askToYiji(player, {
-        cards = player:getPile("yi__kongcheng__pile"),
-        expand_pile = "yi__kongcheng__pile",
-        prompt = "#yi__guanxing_distribute",
-        skill_name = guanxing.name,
-        cancelable = true,
-        min_num = 1,
-        max_num = 999,
-      })
-    end
+    player:showCards(player:getCardIds("h"))
+    room:setCardMark(Fk:getCardById(player:getCardIds("h")[1]), "@@jieshou-inhand-turn", 1)
+    if player.dead then return end
+    player:drawCards(player.maxHp, jieshou.name)
   end,
 })
 
-return guanxing
+jieshou:addEffect(fk.BeforeCardsMove, {
+  anim_type = "negative",
+  can_trigger = function(self, event, target, player, data)
+    if player:hasSkill(jieshou.name) then
+      for _, move in ipairs(data) do
+        if move.from == player then
+          for _, info in ipairs(move.moveInfo) do
+            if Fk:getCardById(info.cardId):getMark("@@jieshou-inhand-turn") > 0 then
+              return true
+            end
+          end
+        end
+      end
+    end
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    room:changeMaxHp(player, -1)
+    room:invalidateSkill(player, jieshou.name, "-turn")
+  end,
+})
+
+return jieshou
 
 -- local zhaxiang = fk.CreateTriggerSkill{
---   name = "yi__zhaxiang",
+--   name = "zhaxiang",
 --   anim_type = "drawcard",
---   prompt = "#yi__zhaxiang",
+--   prompt = "#zhaxiang",
 --   events = {fk.HpLost},
 --   on_trigger = function(self, event, target, player, data)
 --     for i = 1, data.num do
@@ -114,29 +93,29 @@ return guanxing
 --         room:setCardMark(card, "@@visible", 1)
 --         table.insert(visible, id)
 --       else 
---         room:setCardMark(card, "@@yi__zhaxiang_damage", 1)
+--         room:setCardMark(card, "@@zhaxiang_damage", 1)
 --       end
 --     end
 --     player:showCards(visible)
 --   end,
 -- }
 -- local zhaxiang_delay = fk.CreateTriggerSkill{
---   name = "#yi__zhaxiang_delay",
+--   name = "#zhaxiang_delay",
 --   refresh_events = {fk.PreCardUse},
 --   can_refresh = function(self, event, target, player, data)
---     return player == target and data.card:getMark("@@yi__zhaxiang_damage") > 0
+--     return player == target and data.card:getMark("@@zhaxiang_damage") > 0
 --   end,
 --   on_refresh = function(self, event, target, player, data)
 --     data.disresponsiveList = table.map(player.room.alive_players, Util.IdMapper)
 --   end,
 -- }
 -- local zhaxiang_trigger = fk.CreateTriggerSkill{
---   name = "#yi__zhaxiang_trigger",
+--   name = "#zhaxiang_trigger",
 --   mute = true,
 --   events = {fk.AfterCardsMove},
 --   can_trigger = function(self, event, target, player, data)
---     if player.dead or not player:hasSkill("yi__zhaxiang") then return false end
---     local suits = player:getTableMark("@yi__zhaxiang-round")
+--     if player.dead or not player:hasSkill("zhaxiang") then return false end
+--     local suits = player:getTableMark("@zhaxiang-round")
 --     if #suits == 4 then return false end
 --     local suit, can_use = nil, false
 --     for _, move in ipairs(data) do
@@ -147,7 +126,7 @@ return guanxing
 --           if card:getMark("@@visible") > 0 or info.fromArea == Card.PlayerEquip then
 --             card:setMark("@@visible", 0)
 --             if not table.contains(suits, suit) and suit ~= Card.NoSuit then
---               player.room:addTableMark(player, "@yi__zhaxiang-round", suit)
+--               player.room:addTableMark(player, "@zhaxiang-round", suit)
 --               can_use = true
 --             end
 --           end
@@ -159,7 +138,7 @@ return guanxing
 --   on_cost = Util.TrueFunc,
 --   on_use = function(self, event, target, player, data)
 --     local room = player.room
---     U.askForUseVirtualCard(room, player, "fire__slash", nil, self.name, "#yi__zhaxiang_slash", 
+--     U.askForUseVirtualCard(room, player, "fire__slash", nil, self.name, "#zhaxiang_slash", 
 --     true, true, true)
 --   end,
 -- }

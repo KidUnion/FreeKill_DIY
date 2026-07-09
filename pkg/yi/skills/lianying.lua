@@ -44,7 +44,8 @@ lianying:addEffect(fk.AfterCardsMove, {
     })
   end,
 })
-lianying:addEffect(fk.TargetSpecifying, {
+
+lianying:addEffect(fk.CardUsing, {
   anim_type = "offensive",
   can_trigger = function(self, event, target, player, data)
     return player:hasSkill(lianying.name) and target == player and data.card.type ~= Card.TypeEquip and data.card.suit ~= Card.NoSuit and
@@ -61,7 +62,7 @@ lianying:addEffect(fk.TargetSpecifying, {
     if choice == "不计次数" then
       player:addCardUseHistory(data.card.trueName, -1)
     elseif choice == "额外结算" then
-      data.use.additionalEffect = (data.use.additionalEffect or 0) + 1
+      data.additionalEffect = (data.additionalEffect or 0) + 1
     end
   end,
 })

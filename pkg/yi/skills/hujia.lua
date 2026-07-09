@@ -6,12 +6,14 @@ local hujia = fk.CreateSkill {
 Fk:loadTranslationTable{
   ["yi__hujia"] = "护驾",
   [":yi__hujia"] = "每回合各限一次，当你距离一以内的群或魏势力角色成为其以外的角色使用牌的目标时，你可令其摸一张牌/令一名魏势力的非目标角色代替其成为此牌目标。",
-
   ["#yi__hujia-choice"] = "护驾：你可为%dest选择一项",
   ["#yi__hujia-transfer"] = "护驾：选择一名魏势力角色代替%dest成为%arg的目标",
   ["yi__hujia_draw"] = "其摸一张牌",
   ["yi__hujia_transfer"] = "转移目标",
-  ["@@yi__hujia-turn"] = "护驾"
+  ["@@yi__hujia-turn"] = "护驾",
+
+  ["$yi__hujia1"] = "虎贲三千，堪当敌万余！",
+  ["$yi__hujia2"] = "壮士八百，足护卫吾身！",
 }
 
 hujia:addEffect(fk.TargetConfirming, {

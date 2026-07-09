@@ -7,10 +7,12 @@ Fk:loadTranslationTable{
   ["yi__jianxiong"] = "奸雄",
   [":yi__jianxiong"] = "全场手牌数最多或你本回合对其发动过【护驾】的角色受到伤害后，你可观看并获得其一张手牌，"..
   "若为伤害牌，你可明置并视为对伤害来源使用之。",
-
   ["#yi__jianxiong-ask"] = "奸雄：你可观看并获得 %src 一张手牌",
   ["#yi__jianxiong_choose"] = "奸雄：选择获得其中一张牌",
-  ["#yi__jianxiong_show"] = "奸雄：你可明置并视为对伤害来源使用之"
+  ["#yi__jianxiong_show"] = "奸雄：你可明置并视为对伤害来源使用之",
+
+  ["$yi__jianxiong1"] = "孤上承天命，会猎于江夏，幸勿观望。",
+  ["$yi__jianxiong2"] = "今雄兵百万，奉词伐罪，敢不归顺？",
 }
 
 local mobileUtil = require "packages.mobile.mobile_util"

@@ -1,102 +1,78 @@
-local guanxing = fk.CreateSkill {
-  name = "yi__guanxing",
+local setu = fk.CreateSkill {
+  name = "setu",
+  tags = { Skill.Compulsory },
 }
 
 Fk:loadTranslationTable{
-  ["yi__guanxing"] = "观星",
-  [":yi__guanxing"] = "准备阶段，你可将手牌摸至｛7｝张并视为使用一张【火攻】，然后将以此法获得的牌以任意顺序置于牌堆顶或牌堆底；"..
-  "若你因此造成伤害或放置的牌数大于存活角色数，｛｝中的数字-1，否则你可分配任意张【空城】牌。",
-  ["#yi__guanxing"] = "观星：你可将手牌摸至%arg张，然后视为使用一张【火攻】",
-  ["#yi__guanxing_distribute"] = "观星：你可分配任意张【空城】牌",
-  ["@yi__guanxing"] = "观星",
-  ["@@yi__guanxing-inhand"] = "观星",
-  
-  ["$yi__guanxing1"] = "祈星辰之力，佑我蜀汉！",
-  ["$yi__guanxing2"] = "伏望天恩，誓讨汉贼！",
+  ["setu"] = "色徒",
+  [":setu"] = "锁定技，每回合首次有角色失去装备区内的牌后，你摸一张牌；若该角色为你，你获得其中一张牌且本回合下次受到伤害+1。",
+  ["#setu-obtain"] = "色徒：获得其中一张牌",
+  ["@@setu-turn"] = "色徒 受伤+1",
+
+  ["$setu"] = "嘿嘿，更衣好，更衣好啊！",
 }
 
-guanxing:addAcquireEffect(function (self, player, is_start)
-  player.room:setPlayerMark(player, "@yi__guanxing", 7)
-end)
-
-guanxing:addEffect(fk.EventPhaseStart, {
-  anim_type = "offensive",
+setu:addEffect(fk.AfterCardsMove, {
+  anim_type = "drawcard",
   can_trigger = function(self, event, target, player, data)
-    return target == player and player:hasSkill(guanxing.name) and player.phase == Player.Start
-  end,
-  on_cost = function(self, event, target, player, data)
-    return player.room:askToSkillInvoke(player, {
-      skill_name = guanxing.name,
-      prompt = "#yi__guanxing:::"..player:getMark("@yi__guanxing"),
-    })
+    if player:hasSkill(setu.name) and player:usedSkillTimes(setu.name, Player.HistoryTurn) == 0 then
+      local cards = {}
+      local equip = false
+      for _, move in ipairs(data) do
+        if move.from then
+          for _, info in ipairs(move.moveInfo) do
+            if info.fromArea == Card.PlayerEquip then
+              equip = true
+              if move.from == player then
+                table.insert(cards, info.cardId)
+              end
+            end
+          end
+        end
+      end
+      event:setCostData(self, { cards = cards })
+      return equip
+    end
   end,
   on_use = function(self, event, target, player, data)
-    local room = player.room
-    local mark = math.floor(player:getMark("@yi__guanxing"))
-    local to_draw = math.max(0, mark - player:getHandcardNum())
-    if to_draw > 0 then
-      player:drawCards(to_draw, guanxing.name, "top", "@@yi__guanxing-inhand")
-    end  
-    local use = room:askToUseVirtualCard(player, {
-      name = "fire_attack",
-      skill_name = guanxing.name,
-      cancelable = false,
-    })
-
-    local guanxing_cards = table.filter(player:getCardIds(Player.Hand), function (id)
-      local card = Fk:getCardById(id)
-      return card:getMark("@@yi__guanxing-inhand") > 0
-    end)
-    if #guanxing_cards > 0 then
-      local result = room:askToGuanxing(player, {
-        cards = guanxing_cards,
-        skill_name = guanxing.name,
-        skip = true,
-      })
-      local top, bottom = result.top, result.bottom
-      room:moveCards({
-        ids = top,
-        from = player,
-        toArea = Card.DrawPile,
-        moveReason = fk.ReasonJustMove,
-        skillName = guanxing.name,
-        proposer = player,
-        drawPilePosition = 1,
-      })
-      room:moveCards({
-        ids = bottom,
-        from = player,
-        toArea = Card.DrawPile,
-        moveReason = fk.ReasonJustMove,
-        skillName = guanxing.name,
-        proposer = player,
-        drawPilePosition = -1,
-      })
-    end
-    if #guanxing_cards > #room:getAlivePlayers() or (use and use.damageDealt) then
-      room:notifySkillInvoked(player, guanxing.name, "negative")
-      room:removePlayerMark(player, "@yi__guanxing", 1)
-    else
-      if #player:getPile("yi__kongcheng__pile") == 0 then return end
-      room:askToYiji(player, {
-        cards = player:getPile("yi__kongcheng__pile"),
-        expand_pile = "yi__kongcheng__pile",
-        prompt = "#yi__guanxing_distribute",
-        skill_name = guanxing.name,
-        cancelable = true,
+    player:drawCards(1, setu.name)
+    local player_cards = event:getCostData(self).cards
+    if #player_cards > 0 then
+      local room = player.room
+      local card = room:askToChooseCard(player, {
+        target = player,
         min_num = 1,
-        max_num = 999,
+        max_num = 1,
+        flag = { card_data = {{ setu.name, player_cards }} },
+        cancelable = false,
+        skill_name = setu.name,
+        prompt = "#setu-obtain",
       })
+      room:addPlayerMark(player, "@@setu-turn", 1)
+      if not card then return end
+      room:obtainCard(player, card, false, fk.ReasonPrey, player, setu.name)
     end
   end,
 })
 
-return guanxing
+setu:addEffect(fk.DamageInflicted, {
+  anim_type = "negative",
+  is_delay_effect = true,
+  can_trigger = function(self, event, target, player, data)
+    return target:getMark("@@setu-turn") > 0
+  end,
+  on_use = function(self, event, target, player, data)
+    data:changeDamage(target:getMark("@@setu-turn"))
+    player.room:setPlayerMark(target, "@@setu-turn", 0)
+  end,
+})
+
+return setu
 
 -- local zhaxiang = fk.CreateTriggerSkill{
---   name = "yi__zhaxiang",
+--   name = "zhaxiang",
 --   anim_type = "drawcard",
---   prompt = "#yi__zhaxiang",
+--   prompt = "#zhaxiang",
 --   events = {fk.HpLost},
 --   on_trigger = function(self, event, target, player, data)
 --     for i = 1, data.num do
@@ -114,29 +90,29 @@ return guanxing
 --         room:setCardMark(card, "@@visible", 1)
 --         table.insert(visible, id)
 --       else 
---         room:setCardMark(card, "@@yi__zhaxiang_damage", 1)
+--         room:setCardMark(card, "@@zhaxiang_damage", 1)
 --       end
 --     end
 --     player:showCards(visible)
 --   end,
 -- }
 -- local zhaxiang_delay = fk.CreateTriggerSkill{
---   name = "#yi__zhaxiang_delay",
+--   name = "#zhaxiang_delay",
 --   refresh_events = {fk.PreCardUse},
 --   can_refresh = function(self, event, target, player, data)
---     return player == target and data.card:getMark("@@yi__zhaxiang_damage") > 0
+--     return player == target and data.card:getMark("@@zhaxiang_damage") > 0
 --   end,
 --   on_refresh = function(self, event, target, player, data)
 --     data.disresponsiveList = table.map(player.room.alive_players, Util.IdMapper)
 --   end,
 -- }
 -- local zhaxiang_trigger = fk.CreateTriggerSkill{
---   name = "#yi__zhaxiang_trigger",
+--   name = "#zhaxiang_trigger",
 --   mute = true,
 --   events = {fk.AfterCardsMove},
 --   can_trigger = function(self, event, target, player, data)
---     if player.dead or not player:hasSkill("yi__zhaxiang") then return false end
---     local suits = player:getTableMark("@yi__zhaxiang-round")
+--     if player.dead or not player:hasSkill("zhaxiang") then return false end
+--     local suits = player:getTableMark("@zhaxiang-round")
 --     if #suits == 4 then return false end
 --     local suit, can_use = nil, false
 --     for _, move in ipairs(data) do
@@ -147,7 +123,7 @@ return guanxing
 --           if card:getMark("@@visible") > 0 or info.fromArea == Card.PlayerEquip then
 --             card:setMark("@@visible", 0)
 --             if not table.contains(suits, suit) and suit ~= Card.NoSuit then
---               player.room:addTableMark(player, "@yi__zhaxiang-round", suit)
+--               player.room:addTableMark(player, "@zhaxiang-round", suit)
 --               can_use = true
 --             end
 --           end
@@ -159,7 +135,7 @@ return guanxing
 --   on_cost = Util.TrueFunc,
 --   on_use = function(self, event, target, player, data)
 --     local room = player.room
---     U.askForUseVirtualCard(room, player, "fire__slash", nil, self.name, "#yi__zhaxiang_slash", 
+--     U.askForUseVirtualCard(room, player, "fire__slash", nil, self.name, "#zhaxiang_slash", 
 --     true, true, true)
 --   end,
 -- }
