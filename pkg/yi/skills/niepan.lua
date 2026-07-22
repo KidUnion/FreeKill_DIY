@@ -1,79 +1,79 @@
-local setu = fk.CreateSkill {
-  name = "setu",
-  tags = { Skill.Compulsory },
+local niepan = fk.CreateSkill {
+  name = "yi__niepan",
 }
 
 Fk:loadTranslationTable{
-  ["setu"] = "色徒",
-  [":setu"] = "锁定技，每回合首次有角色失去装备区内的牌后，你摸一张牌；若该角色为你，你获得其中一张牌且本回合下次受到伤害+1。",
-  ["#setu-obtain"] = "色徒：获得其中一张牌",
-  ["@@setu-turn"] = "色徒 受伤+1",
+  ["yi__niepan"] = "涅槃",
+  [":yi__niepan"] = "当你成为牌的目标后，你可横置并令此牌对你无效；当你重置或首次进入濒死状态时，你回复一点体力并摸两张牌。",
+  ["#yi__niepan"] = "涅槃：你可以横置并令此牌对你无效",
 
-  ["$setu1"] = "嘿嘿，更衣好，更衣好啊！",
-  ["$setu2"] = "咱家舍不得！",
+  ["$yi__niepan2"] = "烈火焚身，凤羽更丰！",
+  ["$yi__niepan1"] = "雏凤展翼，风尘翕张！",
 }
 
-setu:addEffect(fk.AfterCardsMove, {
-  anim_type = "drawcard",
+niepan:addEffect(fk.TargetConfirming, {
+  anim_type = "defensive",
   can_trigger = function(self, event, target, player, data)
-    if player:hasSkill(setu.name) and player:usedSkillTimes(setu.name, Player.HistoryTurn) == 0 then
-      local cards = {}
-      local equip = false
-      for _, move in ipairs(data) do
-        if move.from then
-          for _, info in ipairs(move.moveInfo) do
-            if info.fromArea == Card.PlayerEquip then
-              equip = true
-              if move.from == player then
-                table.insert(cards, info.cardId)
-              end
-            end
-          end
-        end
-      end
-      event:setCostData(self, { cards = cards })
-      return equip
+    return target == player and player:hasSkill(niepan.name) and not player.chained
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    if room:askToSkillInvoke(player, {
+      skill_name = niepan.name,
+      prompt = "#yi__niepan",
+    }) then
+      return true
     end
   end,
   on_use = function(self, event, target, player, data)
-    player:drawCards(1, setu.name)
-    local player_cards = event:getCostData(self).cards
-    if #player_cards > 0 then
-      local room = player.room
-      local card = room:askToChooseCard(player, {
-        target = player,
-        min_num = 1,
-        max_num = 1,
-        flag = { card_data = {{ setu.name, player_cards }} },
-        cancelable = false,
-        skill_name = setu.name,
-        prompt = "#setu-obtain",
-      })
-      room:addPlayerMark(player, "@@setu-turn", 1)
-      if not card then return end
-      room:obtainCard(player, card, false, fk.ReasonPrey, player, setu.name)
-    end
+    player:setChainState(true)
+    data.nullified = true
   end,
 })
 
-setu:addEffect(fk.DamageInflicted, {
-  anim_type = "negative",
-  is_delay_effect = true,
+niepan:addEffect(fk.BeforeChainStateChange, {
+  anim_type = "defensive",
   can_trigger = function(self, event, target, player, data)
-    return target:getMark("@@setu-turn") > 0
+    return target == player and player:hasSkill(niepan.name) and player.chained
   end,
+  on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
-    data:changeDamage(target:getMark("@@setu-turn"))
-    player.room:setPlayerMark(target, "@@setu-turn", 0)
+    local room = player.room
+      room:recover({
+      who = player,
+      num = 1,
+      recoverBy = player,
+      skillName = niepan.name,
+    })
+    player:drawCards(2, niepan.name)
   end,
 })
 
-return setu
+niepan:addEffect(fk.EnterDying, {
+  anim_type = "defensive",
+  can_trigger = function(self, event, target, player, data)
+    return target == player and player:hasSkill(niepan.name) and player:getMark("yi__niepan_dying") == 0
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+      room:recover({
+      who = player,
+      num = 1,
+      recoverBy = player,
+      skillName = niepan.name,
+    })
+    player:drawCards(2, niepan.name)
+    player:setMark("yi__niepan_dying", 1)
+  end,
+})
+
+return niepan
 
 -- local zhaxiang = fk.CreateTriggerSkill{
---   name = "zhaxiang",
+--   name = "yi__zhaxiang",
 --   anim_type = "drawcard",
---   prompt = "#zhaxiang",
+--   prompt = "#yi__zhaxiang",
 --   events = {fk.HpLost},
 --   on_trigger = function(self, event, target, player, data)
 --     for i = 1, data.num do
@@ -91,29 +91,29 @@ return setu
 --         room:setCardMark(card, "@@visible", 1)
 --         table.insert(visible, id)
 --       else 
---         room:setCardMark(card, "@@zhaxiang_damage", 1)
+--         room:setCardMark(card, "@@yi__zhaxiang_damage", 1)
 --       end
 --     end
 --     player:showCards(visible)
 --   end,
 -- }
 -- local zhaxiang_delay = fk.CreateTriggerSkill{
---   name = "#zhaxiang_delay",
+--   name = "#yi__zhaxiang_delay",
 --   refresh_events = {fk.PreCardUse},
 --   can_refresh = function(self, event, target, player, data)
---     return player == target and data.card:getMark("@@zhaxiang_damage") > 0
+--     return player == target and data.card:getMark("@@yi__zhaxiang_damage") > 0
 --   end,
 --   on_refresh = function(self, event, target, player, data)
 --     data.disresponsiveList = table.map(player.room.alive_players, Util.IdMapper)
 --   end,
 -- }
 -- local zhaxiang_trigger = fk.CreateTriggerSkill{
---   name = "#zhaxiang_trigger",
+--   name = "#yi__zhaxiang_trigger",
 --   mute = true,
 --   events = {fk.AfterCardsMove},
 --   can_trigger = function(self, event, target, player, data)
---     if player.dead or not player:hasSkill("zhaxiang") then return false end
---     local suits = player:getTableMark("@zhaxiang-round")
+--     if player.dead or not player:hasSkill("yi__zhaxiang") then return false end
+--     local suits = player:getTableMark("@yi__zhaxiang-round")
 --     if #suits == 4 then return false end
 --     local suit, can_use = nil, false
 --     for _, move in ipairs(data) do
@@ -124,7 +124,7 @@ return setu
 --           if card:getMark("@@visible") > 0 or info.fromArea == Card.PlayerEquip then
 --             card:setMark("@@visible", 0)
 --             if not table.contains(suits, suit) and suit ~= Card.NoSuit then
---               player.room:addTableMark(player, "@zhaxiang-round", suit)
+--               player.room:addTableMark(player, "@yi__zhaxiang-round", suit)
 --               can_use = true
 --             end
 --           end
@@ -136,7 +136,7 @@ return setu
 --   on_cost = Util.TrueFunc,
 --   on_use = function(self, event, target, player, data)
 --     local room = player.room
---     U.askForUseVirtualCard(room, player, "fire__slash", nil, self.name, "#zhaxiang_slash", 
+--     U.askForUseVirtualCard(room, player, "fire__slash", nil, self.name, "#yi__zhaxiang_slash", 
 --     true, true, true)
 --   end,
 -- }

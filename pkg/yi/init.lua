@@ -179,10 +179,6 @@ Fk:loadTranslationTable{
   ["#yi__pangtong"] = "鸾凤展翅",
   ["designer:yi__pangtong"] = "KidUnion",
 
-  ["$yi__lianhuan1"] = "任凭潮涌，连环无惧！",
-  ["$yi__lianhuan2"] = "并排横江，可利水战！",
-  ["$yi__niepan2"] = "烈火焚身，凤羽更丰！",
-  ["$yi__niepan1"] = "雏凤展翼，风尘翕张！",
   ["~yi__pangtong"] = "骥飞羽落，坡道归尘……",
 }
 

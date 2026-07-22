@@ -7,8 +7,8 @@ Fk:loadTranslationTable{
   ["yi__yijue"] = "义绝",
   [":yi__yijue"] = "锁定技，防止一名角色对你造成的首次致命伤害，若如此做，防止你对其造成的下一次致命伤害。",
   ["#yi__yijue_delay"] = "义绝",
-  ["@@yi__yi"] = "义",
-  ["@@yi__yijue"] = "义绝",
+  ["@yi__yi"] = "义",
+  ["@yi__yijue"] = "义绝",
 
   ["$yi__yijue1"] = "关某，向来恩怨分明！",
   ["$yi__yijue2"] = "恩已断，义当绝！",
@@ -18,12 +18,13 @@ yijue:addEffect(fk.DamageInflicted, {
   anim_type = "defensive",
   can_trigger = function(self, event, target, player, data)
     return target == player and player:hasSkill(self) and data.damage >= player.hp and data.from and
-      data.from:getMark("@@yi__yi") ~= player.id and data.from:getMark("@@yi__yijue") ~= player.id
+      not table.contains(data.from:getTableMark("@yi__yi"), player.id) 
+      and not table.contains(data.from:getTableMark("@yi__yijue"), player.id)
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
     player.room:doIndicate(player.id, {data.from.id})
-    room:setPlayerMark(data.from, "@@yi__yi", player.id)
+    room:addTableMarkIfNeed(data.from, "@yi__yi", player.id)
     data:preventDamage()
   end,
 })
@@ -32,13 +33,13 @@ yijue:addEffect(fk.DamageInflicted, {
   anim_type = "defensive",
   can_trigger = function(self, event, target, player, data)
     return data.from and data.from == player and player:hasSkill(self) and data.damage >= target.hp and
-    target:getMark("@@yi__yi") == player.id
+    table.contains(data.from:getTableMark("@yi__yi"), player.id) 
   end,
   on_use = function(self, event, target, player, data)
     local room = player.room
     player.room:doIndicate(player.id, {target.id})
-    room:setPlayerMark(target, "@@yi__yi", 0)
-    room:setPlayerMark(target, "@@yi__yijue", player.id)
+    room:removeTableMark(player, "@yi__yi", target.id)
+    room:addTableMarkIfNeed(target, "@yi__yijue", player.id)
     data:preventDamage()
   end,
 })

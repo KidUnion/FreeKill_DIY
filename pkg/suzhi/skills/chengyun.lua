@@ -233,33 +233,41 @@ chengyun:addEffect(fk.CardUsing, {
   on_cost = Util.TrueFunc,
   on_use = function(self, event, target, player, data)
     local room = player.room
+    if target == player then
+      room:drawCards(player, 1, chengyun.name)
+      return
+    end
     if player:getSwitchSkillState(chengyun.name, true) == fk.SwitchYang then
-      local card = room:askToCards(player, {
-        min_num = 1,
-        max_num = 1,
-        include_equip = false,
-        skill_name = chengyun.name,
-        prompt = "#chengyun-give::"..target.id,
-        cancelable = false,
-      })
-      if #card > 0 then
-        room:moveCardTo(card, Card.PlayerHand, target, fk.ReasonGive, chengyun.name, nil, false, player)
-        if not player.dead then
-          room:drawCards(player, 1, chengyun.name)
+      if #player:getCardIds("h") > 0 then
+        local card = room:askToCards(player, {
+          min_num = 1,
+          max_num = 1,
+          include_equip = false,
+          skill_name = chengyun.name,
+          prompt = "#chengyun-give::"..target.id,
+          cancelable = false,
+        })
+        if #card > 0 then
+          room:moveCardTo(card, Card.PlayerHand, target, fk.ReasonGive, chengyun.name, nil, false, player)
         end
       end
+      if not player.dead then
+        room:drawCards(player, 1, chengyun.name)
+      end
     else
-      local card = room:askToChooseCard(player, {
-        target = target,
-        flag = "h",
-        skill_name = chengyun.name,
-        prompt = "#chengyun-prey::"..target.id,
-      })
-      if card ~= nil then
-        room:moveCardTo(card, Card.PlayerHand, player, fk.ReasonPrey, chengyun.name, nil, false, player)
-        if not target.dead then
-          room:drawCards(target, 1, chengyun.name)
+      if #target:getCardIds("h") > 0 then
+        local card = room:askToChooseCard(player, {
+          target = target,
+          flag = "h",
+          skill_name = chengyun.name,
+          prompt = "#chengyun-prey::"..target.id,
+        })
+        if card ~= nil then
+          room:moveCardTo(card, Card.PlayerHand, player, fk.ReasonPrey, chengyun.name, nil, false, player)
         end
+      end
+      if not target.dead then
+        room:drawCards(target, 1, chengyun.name)
       end
     end
   end,

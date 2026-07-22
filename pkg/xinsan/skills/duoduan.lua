@@ -1,74 +1,111 @@
-local setu = fk.CreateSkill {
-  name = "setu",
-  tags = { Skill.Compulsory },
+local duoduan = fk.CreateSkill {
+  name = "duoduan",
 }
 
 Fk:loadTranslationTable{
-  ["setu"] = "色徒",
-  [":setu"] = "锁定技，每回合首次有角色失去装备区内的牌后，你摸一张牌；若该角色为你，你获得其中一张牌且本回合下次受到伤害+1。",
-  ["#setu-obtain"] = "色徒：获得其中一张牌",
-  ["@@setu-turn"] = "色徒 受伤+1",
+  ["duoduan"] = "多断",
+  [":duoduan"] = "出牌阶段每名其他角色限一次，当你使用即时牌指定首个目标后，可令一名非目标角色展示并交给你一张牌，"..
+  "若为黑，你弃本阶段此项发动次数张牌，此牌额外结算一次；红，其于回合结束后交给你一张牌并获得此牌，此牌无效且不计次数。",
 
-  ["$setu1"] = "嘿嘿，更衣好，更衣好啊！",
-  ["$setu2"] = "咱家舍不得！",
+  ["#duoduan-invoke"] = "多断：你可令一名非目标角色交给你一张牌",
+  ["#duoduan-choose"] = "多断：交给 %dest 一张牌",
+  ["#duoduan_discard"] = "多断：请弃置 %arg 张牌",
+  ["@$duoduan_draw-turn"] = "多断"
 }
 
-setu:addEffect(fk.AfterCardsMove, {
+duoduan:addEffect(fk.TargetSpecified, {
+  anim_type = "special",
+  can_trigger = function(self, event, target, player, data)
+    if target == player and player:hasSkill(duoduan.name) and player.phase == Player.Play
+      and data.firstTarget and (data.card.type == Card.TypeBasic or data.card:isCommonTrick()) then
+      return #table.filter(player.room.alive_players, function (p)
+        return p ~= player and not table.contains(data:getAllTargets(), p)
+          and not p:isNude() and p:getMark("duoduan-turn") == 0
+      end) > 0
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    local targets = table.filter(room.alive_players, function (p)
+      return p ~= player and not table.contains(data:getAllTargets(), p) 
+        and not p:isNude() and p:getMark("duoduan-turn") == 0
+    end)
+    local tos = room:askToChoosePlayers(player, {
+      targets = targets,
+      min_num = 1,
+      max_num = 1,
+      skill_name = duoduan.name,
+      prompt = "#duoduan-invoke",
+      cancelable = true,
+    })
+    if tos and #tos > 0 then
+      event:setCostData(self, {to = tos[1]})
+      return true
+    end
+  end,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local to = event:getCostData(self).to
+    local card = room:askToChooseCard(to, {
+      target = to,
+      flag = "he",
+      skill_name = duoduan.name,
+      prompt = "#duoduan-choose::" .. player.id
+    })
+    room:setPlayerMark(to, "duoduan-turn", 1)
+    if not card then return end
+    room:showCards(card, to, to)
+    room:obtainCard(player, card, true, fk.ReasonPrey, player, duoduan.name)
+    if Fk:getCardById(card, false):getColorString() == "red" then
+      room:addTableMark(player, "duoduan-draw-turn", to.id)
+      room:addTableMark(to, "@$duoduan_draw-turn", data.card.id)
+      data.use.toCard = nil
+      data.use:removeAllTargets()
+      player:addCardUseHistory(data.card.trueName, -1)
+    elseif Fk:getCardById(card, false):getColorString() == "black" then
+      player:addMark("duoduan-discard-turn", 1)
+      local num = player:getMark("duoduan-discard-turn")
+      room:askToDiscard(player, {
+        min_num = num,
+        max_num = num,
+        include_equip = true,
+        skill_name = duoduan.name,
+        prompt = "#duoduan_discard:::" .. num,
+        cancelable = false
+      })
+      data.use.additionalEffect = (data.use.additionalEffect or 0) + 1
+    end
+  end,
+})
+
+duoduan:addEffect(fk.TurnEnd, {
   anim_type = "drawcard",
   can_trigger = function(self, event, target, player, data)
-    if player:hasSkill(setu.name) and player:usedSkillTimes(setu.name, Player.HistoryTurn) == 0 then
-      local cards = {}
-      local equip = false
-      for _, move in ipairs(data) do
-        if move.from then
-          for _, info in ipairs(move.moveInfo) do
-            if info.fromArea == Card.PlayerEquip then
-              equip = true
-              if move.from == player then
-                table.insert(cards, info.cardId)
-              end
-            end
-          end
-        end
+    return player:hasSkill(duoduan.name) and #player:getTableMark("duoduan-draw-turn") > 0
+  end,
+  on_cost = Util.TrueFunc,
+  on_use = function(self, event, target, player, data)
+    local room = player.room
+    local targets = player:getTableMark("duoduan-draw-turn") or {}
+    for _, p in ipairs(targets) do
+      local target = room:getPlayerById(p)
+      if not target.dead then
+        local card = room:askToChooseCard(target, {
+          target = target,
+          flag = "he",
+          skill_name = duoduan.name,
+          prompt = "#duoduan-choose::" .. player.id,
+          cancelable = false
+        })
+        if not card then return end
+        room:obtainCard(player, card, false, fk.ReasonPrey, target, duoduan.name)
+        room:obtainCard(target, target:getTableMark("@$duoduan_draw-turn"), false, fk.ReasonPrey, target, duoduan.name)
       end
-      event:setCostData(self, { cards = cards })
-      return equip
-    end
-  end,
-  on_use = function(self, event, target, player, data)
-    player:drawCards(1, setu.name)
-    local player_cards = event:getCostData(self).cards
-    if #player_cards > 0 then
-      local room = player.room
-      local card = room:askToChooseCard(player, {
-        target = player,
-        min_num = 1,
-        max_num = 1,
-        flag = { card_data = {{ setu.name, player_cards }} },
-        cancelable = false,
-        skill_name = setu.name,
-        prompt = "#setu-obtain",
-      })
-      room:addPlayerMark(player, "@@setu-turn", 1)
-      if not card then return end
-      room:obtainCard(player, card, false, fk.ReasonPrey, player, setu.name)
     end
   end,
 })
 
-setu:addEffect(fk.DamageInflicted, {
-  anim_type = "negative",
-  is_delay_effect = true,
-  can_trigger = function(self, event, target, player, data)
-    return target:getMark("@@setu-turn") > 0
-  end,
-  on_use = function(self, event, target, player, data)
-    data:changeDamage(target:getMark("@@setu-turn"))
-    player.room:setPlayerMark(target, "@@setu-turn", 0)
-  end,
-})
-
-return setu
+return duoduan
 
 -- local zhaxiang = fk.CreateTriggerSkill{
 --   name = "zhaxiang",

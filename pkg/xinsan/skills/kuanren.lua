@@ -1,74 +1,103 @@
-local setu = fk.CreateSkill {
-  name = "setu",
-  tags = { Skill.Compulsory },
+local kuanren = fk.CreateSkill {
+  name = "kuanren",
 }
 
 Fk:loadTranslationTable{
-  ["setu"] = "色徒",
-  [":setu"] = "锁定技，每回合首次有角色失去装备区内的牌后，你摸一张牌；若该角色为你，你获得其中一张牌且本回合下次受到伤害+1。",
-  ["#setu-obtain"] = "色徒：获得其中一张牌",
-  ["@@setu-turn"] = "色徒 受伤+1",
+  ["kuanren"] = "宽仁",
+  [":kuanren"] = "每轮每名角色各限一次，当你获得其他角色的牌/受到其他角色造成的伤害后，"..
+  "你可与其各摸一张牌，然后本轮其他角色计算与你的距离-1/+1。",
 
-  ["$setu1"] = "嘿嘿，更衣好，更衣好啊！",
-  ["$setu2"] = "咱家舍不得！",
+  ["#kuanren-invoke"] = "宽仁：你可与%dest各摸一张牌",
+  ["@kuanren-plus-round"] = "宽仁 +",
+  ["@kuanren-minus-round"] = "宽仁 -",
 }
 
-setu:addEffect(fk.AfterCardsMove, {
-  anim_type = "drawcard",
+kuanren:addEffect(fk.AfterCardsMove, {
+  anim_type = "special",
   can_trigger = function(self, event, target, player, data)
-    if player:hasSkill(setu.name) and player:usedSkillTimes(setu.name, Player.HistoryTurn) == 0 then
-      local cards = {}
-      local equip = false
+    if player:hasSkill(kuanren.name) then
       for _, move in ipairs(data) do
-        if move.from then
+        if move.to == player and move.toArea == Player.Hand and move.from and move.from ~= player 
+          and move.from:getMark("kuanren_damage-round") == 0 and not move.from.dead then
           for _, info in ipairs(move.moveInfo) do
-            if info.fromArea == Card.PlayerEquip then
-              equip = true
-              if move.from == player then
-                table.insert(cards, info.cardId)
-              end
+            if info.fromArea == Card.PlayerHand or info.fromArea == Card.PlayerEquip then
+              return true
             end
           end
         end
       end
-      event:setCostData(self, { cards = cards })
-      return equip
     end
   end,
+  on_trigger = function (self, event, target, player, data)
+    for _, move in ipairs(data) do
+      if move.to == player and move.toArea == Player.Hand and move.from and move.from ~= player 
+        and move.from:getMark("kuanren_damage-round") == 0 and not move.from.dead then
+        for _, info in ipairs(move.moveInfo) do
+          if info.fromArea == Card.PlayerHand or info.fromArea == Card.PlayerEquip then
+            event:setCostData(self, { to = move.from })
+            self:doCost(event, target, player, data)
+            break
+          end
+        end
+      end
+    end
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    if room:askToSkillInvoke(player, {
+      skill_name = kuanren.name,
+      prompt = "#kuanren-invoke::" .. event:getCostData(self).to.id,
+    }) then return true end
+  end,
   on_use = function(self, event, target, player, data)
-    player:drawCards(1, setu.name)
-    local player_cards = event:getCostData(self).cards
-    if #player_cards > 0 then
-      local room = player.room
-      local card = room:askToChooseCard(player, {
-        target = player,
-        min_num = 1,
-        max_num = 1,
-        flag = { card_data = {{ setu.name, player_cards }} },
-        cancelable = false,
-        skill_name = setu.name,
-        prompt = "#setu-obtain",
-      })
-      room:addPlayerMark(player, "@@setu-turn", 1)
-      if not card then return end
-      room:obtainCard(player, card, false, fk.ReasonPrey, player, setu.name)
+    local room = player.room
+    local to = event:getCostData(self).to
+    room:drawCards(player, 1, kuanren.name)
+    room:drawCards(to, 1, kuanren.name)
+    room:setPlayerMark(to, "kuanren_damage-round", 1)
+    if player:getMark("@kuanren-plus-round") > 0 then
+      room:removePlayerMark(player, "@kuanren-plus-round", 1)
+    else
+      room:addPlayerMark(player, "@kuanren-minus-round", 1)
     end
   end,
 })
 
-setu:addEffect(fk.DamageInflicted, {
-  anim_type = "negative",
-  is_delay_effect = true,
+kuanren:addEffect(fk.Damaged, {
+  anim_type = "special",
   can_trigger = function(self, event, target, player, data)
-    return target:getMark("@@setu-turn") > 0
+    return target == player and player:hasSkill(kuanren.name) and data.from and data.from ~= player 
+      and not data.from.dead and data.from:getMark("kuanren_prey-round") == 0
+  end,
+  on_cost = function(self, event, target, player, data)
+    local room = player.room
+    if room:askToSkillInvoke(player, {
+      skill_name = kuanren.name,
+      prompt = "#kuanren-invoke::" .. data.from.id,
+    }) then return true end
   end,
   on_use = function(self, event, target, player, data)
-    data:changeDamage(target:getMark("@@setu-turn"))
-    player.room:setPlayerMark(target, "@@setu-turn", 0)
+    local room = player.room
+    room:drawCards(player, 1, kuanren.name)
+    room:drawCards(data.from, 1, kuanren.name)
+    room:setPlayerMark(data.from, "kuanren_prey-round", 1)
+    if player:getMark("@kuanren-minus-round") > 0 then
+      room:removePlayerMark(player, "@kuanren-minus-round", 1)
+    else
+      room:addPlayerMark(player, "@kuanren-plus-round", 1)
+    end
   end,
 })
 
-return setu
+kuanren:addEffect("distance", {
+  correct_func = function(self, from, to)
+    if to:getMark("@kuanren-plus-round") > 0 or to:getMark("@kuanren-minus-round") > 0 then
+      return to:getMark("@kuanren-plus-round") - to:getMark("@kuanren-minus-round")
+    end
+  end,
+})
+
+return kuanren
 
 -- local zhaxiang = fk.CreateTriggerSkill{
 --   name = "zhaxiang",

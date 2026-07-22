@@ -23,5 +23,12 @@ Fk:loadTranslationTable{
   ["~xinsan__caoren"] = "弃城！",
 }
 
+General:new(extension, "xinsan__yuanshao", "qun", 4):addSkills { "duoduan", "kuanren" }
+Fk:loadTranslationTable{
+  ["xinsan__yuanshao"] = "新三袁绍",
+  ["designer:xinsan__yuanshao"] = "KidUnion",
+
+  ["~xinsan__yuanshao"] = "此战，罪在于我，连累三军呀！",
+}
 
 return extension

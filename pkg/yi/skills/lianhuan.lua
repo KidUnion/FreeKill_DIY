@@ -1,82 +1,113 @@
-local zuiquan = fk.CreateSkill {
-  name = "zuiquan",
+local lianhuan = fk.CreateSkill {
+  name = "yi__lianhuan",
 }
 
 Fk:loadTranslationTable{
-  ["zuiquan"] = "醉拳",
-  [":zuiquan"] = "出牌阶段，你可视为使用一张【酒】并随机重铸一张手牌。红色基本牌进入弃牌堆后，你本回合使用的下一张【杀】或【酒】无次数限制。",
-  ["#zuiquan-active"] = "发动【醉拳】，视为使用一张【酒】并随机重铸一张手牌",
+  ["yi__lianhuan"] = "连环",
+  [":yi__lianhuan"] = "出牌阶段，你可与一名未横置角色拼点，若你赢，你可使用一张本回合非因使用进入弃牌堆的牌；否则其横置。"..
+  "若全场横置角色均相邻，你每回合首次发动此技能无目标限制且没赢的角色下一次受到的伤害改为火属性。",
+  ["#yi__lianhuan"] = "连环：与一名角色拼点",
+  ["#yi__lianhuan_use"] = "连环：你可使用其中一张牌",
+  ["@@yi__lianhuan_lose"] = "连环 没赢",
   
-  ["$zuiquan"] = "醉拳",
-  ["@@zuiquan-turn"] = "醉拳",
+  ["$yi__lianhuan1"] = "任凭潮涌，连环无惧！",
+  ["$yi__lianhuan2"] = "并排横江，可利水战！",
 }
 
-local function zuiquanAnaleptic()
-  local card = Fk:cloneCard("analeptic")
-  card.skillName = zuiquan.name
-  return card
+function adjacent(players)
+  local n = 0
+  local has_chained = false
+  for i, player in ipairs(players) do
+    if player.chained then
+      has_chained = true
+    end
+    if player.chained ~= players[i % #players + 1].chained then
+      n = n + 1
+    end
+  end
+  return has_chained and n < 3
 end
 
-zuiquan:addEffect("viewas", {
+lianhuan:addEffect("active", {
   anim_type = "offensive",
-  prompt = "#zuiquan-active",
+  prompt = "#yi__lianhuan",
   card_num = 0,
-  view_as = function(self)
-    return zuiquanAnaleptic()
+  target_num = 1,
+  can_use = function(self, player)
+    return player:hasSkill(lianhuan.name) and not player:isKongcheng()
   end,
-  before_use = function(self, player, use)
-    use.extraUse = false
+  card_filter = Util.FalseFunc,
+  target_filter = function(self, player, to_select, selected, selected_cards)
+    return #selected == 0 and to_select ~= player and not to_select:isKongcheng() and (not to_select.chained or 
+      (player:usedSkillTimes(lianhuan.name, Player.HistoryPhase) == 0 and adjacent(Fk:currentRoom().alive_players)))
   end,
-  after_use = function(self, player, useData)
-    local room = player.room
-    local card = table.random(player:getCardIds(Player.Hand))
-    if not card then return end
-    room:recastCard(card, player, zuiquan.name)
-  end,
-  enabled_at_play = function (self, player)
-    return player.phase == Player.Play and player:canUse(zuiquanAnaleptic()) and
-    #player:getCardIds(Player.Hand) > 0
-  end,
-  enabled_at_response = Util.FalseFunc,
-})
-  
-zuiquan:addEffect(fk.AfterCardsMove, {
-  can_trigger = function(self, event, target, player, data)
-    if not player:hasSkill(zuiquan.name) then return end
-    for _, move in ipairs(data) do
-      if move.toArea == Card.DiscardPile then
-        for _, info in ipairs(move.moveInfo) do
-          local card = Fk:getCardById(info.cardId)
-          -- return card and card.trueName == "jink"
-          return card and card.color == Card.Red and card.type == Card.TypeBasic
+  on_use = function(self, room, effect)
+    local player = effect.from
+    local target = effect.tos[1]
+    local fire = false
+    if player:usedSkillTimes(lianhuan.name, Player.HistoryPhase) == 1 and adjacent(player.room:getAlivePlayers()) then
+      fire = true
+    end
+    local pindian = player:pindian({target}, lianhuan.name)
+    if pindian.results[target].winner == player then
+      if fire and not target.dead then
+        room:setPlayerMark(target, "@@yi__lianhuan_lose", 1)
+      end
+      if player.dead then return end
+      local all_cards, cards = {}, {}
+      room.logic:getEventsByRule(GameEvent.MoveCards, 1, function(e)
+        for _, move in ipairs(e.data) do
+          if move.toArea == Card.DiscardPile then
+            for _, info in ipairs(move.moveInfo) do
+              if room:getCardArea(info.cardId) == Card.DiscardPile then
+                if move.moveReason ~= fk.ReasonUse and
+                    table.insertIfNeed(all_cards, info.cardId) then
+                  table.insertIfNeed(cards, info.cardId)
+                else
+                  table.insertIfNeed(all_cards, info.cardId)
+                end
+              end
+            end
+          end
         end
+      end, nil, Player.HistoryTurn)
+      if #cards == 0 then return end
+      local use = room:askToUseRealCard(player, {
+        pattern = cards,
+        skill_name = lianhuan.name,
+        prompt = "#yi__lianhuan_use",
+        extra_data = {
+          bypass_times = true,
+          extraUse = true,
+          expand_pile = cards,
+        },
+        skip = false,
+      })
+    else
+      if not target.dead then
+        target:setChainState(true)
+        if fire and pindian.results[target].winner ~= target then
+          room:setPlayerMark(target, "@@yi__lianhuan_lose", 1)
+        end
+      end
+      if not player.dead and fire then
+        room:setPlayerMark(player, "@@yi__lianhuan_lose", 1)
       end
     end
   end,
-  on_trigger = function(self, event, target, player, data)
-    local room = player.room
-    room:setPlayerMark(player, "@@zuiquan-turn", 1)
+})
+
+lianhuan:addEffect(fk.DetermineDamageInflicted, {
+  can_refresh = function(self, event, target, player, data)
+    return target:getMark("@@yi__lianhuan_lose") > 0
+  end,
+  on_refresh = function(self, event, target, player, data)
+    data.damageType = fk.FireDamage
+    player.room:setPlayerMark(target, "@@yi__lianhuan_lose", 0)
   end,
 })
 
-zuiquan:addEffect(fk.CardUsing, {
-  mute = true,
-  can_trigger = function(self, event, target, player, data)
-    return player == target and player:getMark("@@zuiquan-turn") > 0 and
-      (data.card.trueName == "slash" or data.card.trueName == "analeptic")
-  end,
-  on_trigger = function(self, event, target, player, data)
-    player.room:setPlayerMark(player, "@@zuiquan-turn", 0)
-  end,
-})
-
-zuiquan:addEffect("targetmod", {
-  bypass_times = function(self, player, skill, scope, card)
-    return card and (card.trueName == "slash" or card.trueName == "analeptic") and player:getMark("@@zuiquan-turn") > 0
-  end,
-})
-
-return zuiquan
+return lianhuan
 
 -- local dangxian = fk.CreateSkill {
 --   name = "ty_ex__dangxian",
@@ -144,12 +175,12 @@ return zuiquan
 
 -- return dangxian
 
--- local zuiquan = fk.CreateActiveSkill{
---   name = "zuiquan",
---   prompt = "#zuiquan-active",
+-- local lianhuan = fk.CreateActiveSkill{
+--   name = "lianhuan",
+--   prompt = "#lianhuan-active",
 --   anim_type = "drawcard",
 --   can_use = function(self, player)
---     return player:hasSkill(self) and player:usedSkillTimes(zuiquan.name, Player.HistoryRound) == 0 
+--     return player:hasSkill(self) and player:usedSkillTimes(self.name, Player.HistoryRound) == 0 
 --       and #player:getCardIds(Player.Hand) > 0
 --   end,
 --   card_filter = Util.FalseFunc,
@@ -157,7 +188,7 @@ return zuiquan
 --     local player = room:getPlayerById(effect.from)
 --     local show_cards = player:getCardIds(Player.Hand)
 --     player:showCards(show_cards)
---     room:addPlayerMark(player, "zuiquan-turn", 1)
+--     room:addPlayerMark(player, "lianhuan-turn", 1)
 --     local cards_suits = {}
 --     for _, id in ipairs(show_cards) do
 --       local card = Fk:getCardById(id)
@@ -175,28 +206,28 @@ return zuiquan
 --         table.insert(match, card)
 --       end
 --     end
---     room:moveCardTo(match, Player.Hand, player, fk.ReasonPrey, zuiquan.name)
+--     room:moveCardTo(match, Player.Hand, player, fk.ReasonPrey, self.name)
 --     local cardsInProcessing = table.filter(top_cards, function(id) return room:getCardArea(id) == Card.Processing end)
 --     if #cardsInProcessing > 0 then
 --       room:moveCardTo(cardsInProcessing, Card.DiscardPile)
 --     end
 --   end,
 -- }
--- local zuiquan_targetmod = fk.CreateTargetModSkill{
---   name = "#zuiquan_targetmod",
+-- local lianhuan_targetmod = fk.CreateTargetModSkill{
+--   name = "#lianhuan_targetmod",
 --   bypass_times = function(self, player, skill, scope, card)
---     return card and player:hasSkill(zuiquan) and player:getMark("zuiquan-turn") > 0
+--     return card and player:hasSkill(lianhuan) and player:getMark("lianhuan-turn") > 0
 --   end,
 --   bypass_distances = function(self, player, skill, card)
---     return card and player:hasSkill(zuiquan) and player:getMark("zuiquan-turn") > 0
+--     return card and player:hasSkill(lianhuan) and player:getMark("lianhuan-turn") > 0
 --   end,
 -- }
--- local zuiquan_trigger = fk.CreateTriggerSkill{
---   name = "#zuiquan_trigger",
+-- local lianhuan_trigger = fk.CreateTriggerSkill{
+--   name = "#lianhuan_trigger",
 --   mute = true,
 --   events = {fk.AfterCardUseDeclared},
 --   can_trigger = function(self, event, target, player, data)
---     return player == target and player:hasSkill(zuiquan) and player:getMark("zuiquan-turn") > 0
+--     return player == target and player:hasSkill(lianhuan) and player:getMark("lianhuan-turn") > 0
 --   end,
 --   on_cost = Util.TrueFunc,
 --   on_use = function(self, event, target, player, data)
@@ -213,12 +244,12 @@ return zuiquan
 --         card.id = data.card.id
 --       end
 --       card.skillNames = data.card.skillNames
---       card.skillName = "zuiquan"
+--       card.skillName = "lianhuan"
 --       card.suit = Card.NoSuit
 --       card.color = Card.NoColor
 --       data.card = card
 --     end
 --     local room = player.room
---     room:setPlayerMark(player, "zuiquan-turn", 0)
+--     room:setPlayerMark(player, "lianhuan-turn", 0)
 --   end,
 -- }

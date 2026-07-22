@@ -12,6 +12,7 @@ Fk:loadTranslationTable{
 }
 
 luanjuan:addEffect(fk.CardUsing, {
+  mute = true,
   can_trigger = function (self, event, target, player, data)
     return target == player and player:hasSkill(luanjuan.name) and data.card.suit ~= Card.NoSuit and
 			not table.contains(player:getTableMark("@luanjuan-turn"), data.card:getSuitString(true))

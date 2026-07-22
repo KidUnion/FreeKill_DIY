@@ -4,7 +4,8 @@ local qingguo = fk.CreateSkill {
 
 Fk:loadTranslationTable{
   ["yi__qingguo"] = "倾国",
-  [":yi__qingguo"] = "当你或你攻击范围内的角色每回合首次失去【闪】时，你可获得一张黑色牌，此牌不计次数与手牌上限。",
+  [":yi__qingguo"] = "当你或你攻击范围内的角色每回合首次失去【闪】时，你可获得一张不记次数的黑色牌并令当前回合角色获得此【闪】。",
+  ["#yi__qingguo-invoke"] = "倾国：你可获得一张黑色牌并令%dest获得此【闪】",
   ["@@yi__qingguo-inhand"] = "倾国",
 
   ["$yi__qingguo1"] = "髣髴兮若轻云之蔽月。",
@@ -21,6 +22,7 @@ qingguo:addEffect(fk.AfterCardsMove, {
             if (info.fromArea == Player.Hand or info.fromArea == Player.Equip) and Fk:getCardById(info.cardId).name == "jink" 
               and move.from:getMark("yi__qingguo-turn") == 0 then
               player.room:setPlayerMark(move.from, "yi__qingguo-turn", 1)
+              event:setCostData(self, {cards = {Fk:getCardById(info.cardId)}})
               return true
             end
           end
@@ -29,20 +31,28 @@ qingguo:addEffect(fk.AfterCardsMove, {
     end
   end,
   on_cost = Util.TrueFunc,
+  -- on_cost = function(self, event, target, player, data)
+  --   local room = player.room
+  --   return room:askToSkillInvoke(player, {
+  --     skill_name = qingguo.name,
+  --     prompt = "#yi__qingguo-invoke::" .. room.current.id,
+  --   })
+  -- end,
   on_use = function(self, event, target, player, data)
     local room = player.room
     local cards = room:getCardsFromPileByRule(".|.|spade,club")
     if #cards > 0 then
-      room:obtainCard(player, cards, true, fk.ReasonJustMove, player, qingguo.name, "@@yi__qingguo-inhand")
+      room:obtainCard(player, cards, true, fk.ReasonPrey, player, qingguo.name, "@@yi__qingguo-inhand")
+      room:obtainCard(room.current, event:getCostData(self).cards, true, fk.ReasonPrey, player, qingguo.name)
     end
   end
 })
 
-qingguo:addEffect("maxcards", {
-  exclude_from = function(self, player, card)
-    return card:getMark("@@yi__qingguo-inhand") > 0 and player:hasSkill(qingguo.name)
-  end,
-})
+-- qingguo:addEffect("maxcards", {
+--   exclude_from = function(self, player, card)
+--     return card:getMark("@@yi__qingguo-inhand") > 0 and player:hasSkill(qingguo.name)
+--   end,
+-- })
 
 qingguo:addEffect(fk.PreCardUse, {
   mute = true,

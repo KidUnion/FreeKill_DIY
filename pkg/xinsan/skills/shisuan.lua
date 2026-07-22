@@ -5,7 +5,7 @@ local shisuan = fk.CreateSkill {
 Fk:loadTranslationTable{
   ["xinsan__shisuan"] = "嗜酸",
   [":xinsan__shisuan"] = "准备阶段，你可弃置任意张牌并选择一名角色，令攻击范围内包含其的至多等量名角色依次选择交给你一张牌或将其一张牌当【酒】使用，"..
-  "然后你可令手牌数因此变动的角色各失去一点体力。",
+  "然后你可令其中一名角色选择失去一点体力或执行另一项。",
   ["#xinsan__shisuan-discard"] = "嗜酸：你可以弃置任意张牌并选择一名角色",
   ["#xinsan__shisuan-choose"] = "嗜酸：选择攻击范围内包含%dest的至多%arg名角色",
   ["#xinsan__shisuan-choice"] = "嗜酸：你须选择一项",
@@ -14,6 +14,8 @@ Fk:loadTranslationTable{
   ["#xinsan__shisuan-give"] = "嗜酸：交给%dest一张牌",
   ["#xinsan__shisuan-use"] = "嗜酸：将%dest的一张牌当【酒】使用",
   ["#xinsan__shisuan-lose"] = "嗜酸：你可令手牌数变动的角色各失去一点体力",
+  ["#xinsan__shisuan-choose2"] = "嗜酸：你可令其中一名角色执行另一项或失去体力",
+  ["#xinsan__shisuan-choice2"] = "嗜酸：执行另一项，或点“取消”失去一点体力",
 
   ["$xinsan__shisuan1"] = "咱家说了，不怕酸！",
   ["$xinsan__shisuan2"] = "咱家恨不得砍了他们的脑袋，用他们的肉煮汤喝！",
@@ -58,6 +60,7 @@ shisuan:addEffect(fk.EventPhaseStart, {
     local froms = event:getCostData(self).froms
     local all_choices = { "xinsan__shisuan_give::" .. player.id, "xinsan__shisuan_use::" .. to.id }
     local changed_players = {}
+    local player_choice = {}
     if #froms == 0 then return end
     for _, p in ipairs(froms) do
       local choices = {}
@@ -67,8 +70,9 @@ shisuan:addEffect(fk.EventPhaseStart, {
       if #to:getCardIds("he") > 0 then
         table.insert(choices, "xinsan__shisuan_use::" .. to.id)
       end
+      local choice
       if #choices > 0 then
-        local choice = room:askToChoice(p, {
+        choice = room:askToChoice(p, {
           choices = choices,
           all_choices = all_choices,
           skill_name = shisuan.name,
@@ -112,16 +116,44 @@ shisuan:addEffect(fk.EventPhaseStart, {
           }
         end
       end
+      player_choice[p] = choice
     end
-    if #changed_players == 0 then return end
-    if room:askToSkillInvoke(player, {
+    local target = room:askToChoosePlayers(player, {
+      targets = froms,
+      min_num = 1,
+      max_num = 1,
       skill_name = shisuan.name,
-      prompt = "#xinsan__shisuan-lose",
-    }) then
-      for _, p in ipairs(changed_players) do
-        room:loseHp(p, 1, shisuan.name)
+      prompt = "#xinsan__shisuan-choose2",
+      cancelable = true,
+    })
+    if #target > 0 then
+      local choices = {}
+      if #target[1]:getCardIds("he") > 0 and player_choice[target[1]] ~= "xinsan__shisuan_give::" .. player.id then
+        table.insert(choices, "xinsan__shisuan_give::" .. player.id)
+      end
+      if #to:getCardIds("he") > 0  and player_choice[target[1]] ~= "xinsan__shisuan_use::" .. to.id then
+        table.insert(choices, "xinsan__shisuan_use::" .. to.id)
+      end
+      local choice2 = room:askToChoice(target[1], {
+        choices = choices,
+        all_choices = all_choices,
+        skill_name = shisuan.name,
+        prompt = "#xinsan__shisuan-choice2",
+        cancelable = true,
+      })
+      if choice2 == "Cancel" then
+        room:loseHp(target[1], 1, shisuan.name)
       end
     end
+    -- if #changed_players == 0 then return end
+    -- if room:askToSkillInvoke(player, {
+    --   skill_name = shisuan.name,
+    --   prompt = "#xinsan__shisuan-lose",
+    -- }) then
+    --   for _, p in ipairs(changed_players) do
+    --     room:loseHp(p, 1, shisuan.name)
+    --   end
+    -- end
   end,
 })
 
